@@ -74,7 +74,7 @@ export const Header = () => {
               onClick={() => window.open('https://wa.me/6289655128024', '_blank')}
               className="bg-cyan-500 hover:bg-cyan-600 text-white"
             >
-              WhatsApp
+              Hubungi CS
             </Button>
           </nav>
 

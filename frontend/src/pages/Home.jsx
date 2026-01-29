@@ -7,6 +7,7 @@ import AboutSection from '../components/AboutSection';
 import WhyWeExist from '../components/WhyWeExist';
 import DetailServices from '../components/DetailServices';
 import WhitelistEducation from '../components/WhitelistEducation';
+import WhitelistDetail from '../components/WhitelistDetail';
 import PricingSection from '../components/PricingSection';
 import TrustCTA from '../components/TrustCTA';
 import ContactSection from '../components/ContactSection';
@@ -25,6 +26,7 @@ export const Home = () => {
       <WhyWeExist />
       <DetailServices />
       <WhitelistEducation />
+      <WhitelistDetail />
       <PricingSection />
       <TrustCTA />
       <ContactSection />

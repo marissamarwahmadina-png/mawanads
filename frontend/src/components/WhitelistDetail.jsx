@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { CheckCircle2, Shield, Zap, TrendingUp, DollarSign, Clock, AlertCircle, Lock } from 'lucide-react';
+import { CheckCircle2, Shield, TrendingUp, DollarSign, Clock, Lock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 export const WhitelistDetail = () => {

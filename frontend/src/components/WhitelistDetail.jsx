@@ -8,38 +8,33 @@ export const WhitelistDetail = () => {
     {
       id: 'meta',
       name: 'Meta Whitelist',
-      icon: '📘',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg',
       color: 'from-blue-500 to-blue-700',
       features: [
         {
           icon: Shield,
-          title: 'Akun Lebih Stabil',
-          description: 'Risiko restricted atau banned jauh lebih rendah karena mendapat perlakuan khusus dari Meta'
+          title: 'Akun Stabil',
+          description: 'Risiko restricted atau banned jauh lebih rendah'
         },
         {
           icon: DollarSign,
-          title: 'Hemat Pajak Meta',
-          description: 'Pembayaran lebih efisien dengan sistem perpajakan yang lebih menguntungkan'
+          title: 'Lebih Hemat PPN',
+          description: 'Pembayaran lebih efisien dengan sistem perpajakan yang menguntungkan'
         },
         {
-          icon: Zap,
-          title: 'Limit Spending Lebih Tinggi',
-          description: 'Akses ke limit budget yang lebih besar untuk campaign skala enterprise'
+          icon: Lock,
+          title: 'Compliance Assistance',
+          description: 'Bantuan khusus memastikan iklan comply dengan policy Meta'
+        },
+        {
+          icon: TrendingUp,
+          title: 'Skalabilitas Tinggi',
+          description: 'Akses ke limit budget lebih besar untuk campaign skala enterprise'
         },
         {
           icon: Clock,
           title: 'Support Priority',
           description: 'Akses ke Meta support dengan respons time lebih cepat'
-        },
-        {
-          icon: TrendingUp,
-          title: 'Approval Lebih Cepat',
-          description: 'Proses review iklan lebih cepat, campaign bisa jalan lebih responsif'
-        },
-        {
-          icon: Lock,
-          title: 'Compliance Assistance',
-          description: 'Bantuan khusus untuk memastikan iklan selalu comply dengan policy Meta'
         }
       ],
       ideal: ['NGO & Yayasan', 'Platform Fundraising', 'Brand dengan spending >10 juta/bulan', 'Agency dengan multiple clients']
@@ -47,38 +42,33 @@ export const WhitelistDetail = () => {
     {
       id: 'google',
       name: 'Google Whitelist',
-      icon: '🔍',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
       color: 'from-red-500 to-yellow-500',
       features: [
         {
           icon: Shield,
-          title: 'Akun Terproteksi',
-          description: 'Perlindungan extra dari suspension dan policy strikes yang tidak wajar'
-        },
-        {
-          icon: TrendingUp,
-          title: 'Quality Score Advantage',
-          description: 'Potensi quality score yang lebih baik dengan cost per click lebih efisien'
-        },
-        {
-          icon: Zap,
-          title: 'Faster Campaign Activation',
-          description: 'Campaign approval dan aktivasi lebih cepat, tidak perlu menunggu lama'
+          title: 'Akun Stabil',
+          description: 'Perlindungan extra dari suspension dan policy strikes'
         },
         {
           icon: DollarSign,
-          title: 'Budget Flexibility',
-          description: 'Akses ke budget allocation yang lebih fleksibel untuk multi-campaign strategy'
-        },
-        {
-          icon: Clock,
-          title: 'Dedicated Account Manager',
-          description: 'Google account manager untuk konsultasi strategi dan troubleshooting'
+          title: 'Lebih Hemat PPN',
+          description: 'Budget allocation yang lebih fleksibel dan efisien'
         },
         {
           icon: Lock,
-          title: 'Policy Compliance Support',
+          title: 'Compliance Assistance',
           description: 'Panduan khusus untuk memastikan compliance dengan Google Ads policy'
+        },
+        {
+          icon: TrendingUp,
+          title: 'Skalabilitas Tinggi',
+          description: 'Quality score lebih baik dengan cost per click lebih efisien'
+        },
+        {
+          icon: Clock,
+          title: 'Support Priority',
+          description: 'Google account manager untuk konsultasi strategi'
         }
       ],
       ideal: ['E-commerce dengan spending tinggi', 'Brand awareness campaigns', 'Lead generation campaigns', 'Multi-regional campaigns']
@@ -86,38 +76,33 @@ export const WhitelistDetail = () => {
     {
       id: 'tiktok',
       name: 'TikTok Whitelist',
-      icon: '🎵',
+      logo: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
       color: 'from-pink-500 to-cyan-500',
       features: [
         {
           icon: Shield,
-          title: 'Akun Verified & Stabil',
+          title: 'Akun Stabil',
           description: 'Status whitelist memberikan kepercayaan lebih dan stabilitas akun'
         },
         {
-          icon: Zap,
-          title: 'Early Access Features',
-          description: 'Akses lebih dulu ke fitur-fitur advertising terbaru dari TikTok'
-        },
-        {
-          icon: TrendingUp,
-          title: 'Algorithm Advantage',
-          description: 'Potensi performa algoritma yang lebih optimal untuk reach dan engagement'
-        },
-        {
           icon: DollarSign,
-          title: 'Competitive CPM',
+          title: 'Lebih Hemat PPN',
           description: 'Harga cost per mille yang lebih kompetitif untuk budget efficiency'
         },
         {
-          icon: Clock,
-          title: 'Priority Review',
-          description: 'Review dan approval iklan lebih cepat, bisa test creative dengan lebih agile'
+          icon: Lock,
+          title: 'Compliance Assistance',
+          description: 'Perlindungan dari false positive content moderation'
         },
         {
-          icon: Lock,
-          title: 'Content Protection',
-          description: 'Perlindungan dari false positive content moderation'
+          icon: TrendingUp,
+          title: 'Skalabilitas Tinggi',
+          description: 'Potensi performa algoritma yang lebih optimal untuk reach'
+        },
+        {
+          icon: Clock,
+          title: 'Support Priority',
+          description: 'Review dan approval iklan lebih cepat untuk test creative'
         }
       ],
       ideal: ['Brand targeting Gen Z & Millennials', 'Viral marketing campaigns', 'Product launching', 'Influencer collaboration ads']

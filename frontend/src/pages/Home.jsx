@@ -14,6 +14,7 @@ import TrustCTA from '../components/TrustCTA';
 import ContactSection from '../components/ContactSection';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import FloatingWhatsApp from '../components/FloatingWhatsApp';
 
 export const Home = () => {
   return (
@@ -33,6 +34,7 @@ export const Home = () => {
       <TrustCTA />
       <ContactSection />
       <Footer />
+      <FloatingWhatsApp />
     </div>
   );
 };

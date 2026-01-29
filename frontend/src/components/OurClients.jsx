@@ -4,28 +4,24 @@ export const OurClients = () => {
   // Logo clients dan partners
   const clients = [
     {
-      name: 'Your Need In Turkey',
-      logo: 'https://yourneedinturkey.com/wp-content/uploads/2024/11/cropped-LOGO-YNIT-192x192.png'
+      name: 'Client 1',
+      logo: 'https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/v1acscsi_2.svg'
     },
     {
-      name: 'Sharing Happiness',
-      logo: 'https://sharinghappiness.org/wp-content/uploads/2024/10/Logo-SH-Utuh-1-150x150.png'
+      name: 'Client 2',
+      logo: 'https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/2ydhnbox_3.svg'
     },
     {
-      name: 'Salurkan Kebaikan',
-      logo: 'https://salurkankebaikan.org/wp-content/uploads/2024/08/Logo-Salurkan-Kebaikan-Baru.svg'
+      name: 'Client 3',
+      logo: 'https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/auafgltp_4.svg'
     },
     {
-      name: 'Siaga Teknik',
-      logo: 'https://siagateknik.com/wp-content/uploads/2024/03/SIAGATEKNIK-LOGO-FULL-2.png'
+      name: 'Client 4',
+      logo: 'https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/v23foqmr_5.svg'
     },
     {
-      name: 'Pure Hands',
-      logo: 'https://purehands.id/wp-content/uploads/2023/06/logo-pure-hands-200x200.png'
-    },
-    {
-      name: 'Blessing MOA',
-      logo: 'https://blessingmoa.id/wp-content/uploads/2024/11/Logo-BM-1536x1536.png'
+      name: 'Client 5',
+      logo: 'https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/5xs4n8s2_6.svg'
     }
   ];
 

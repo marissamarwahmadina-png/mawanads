@@ -266,20 +266,20 @@ export const WhitelistDetail = () => {
               Siap Upgrade Campaign Digital Anda?
             </h3>
             <p className="text-lg text-white/90 mb-8">
-              Konsultasi gratis untuk menentukan akun whitelist platform mana yang paling cocok untuk kebutuhan bisnis Anda.
+              Dapatkan akun whitelist sekarang dan rasakan perbedaannya, atau konsultasi gratis untuk menentukan platform yang paling cocok untuk bisnis Anda.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="bg-white text-cyan-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg shadow-lg transition-all duration-300 hover:shadow-xl"
+                onClick={() => window.open('https://mawanads.adsolution.co.id/register', '_blank')}
+                className="bg-white text-cyan-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
               >
-                Konsultasi Sekarang
+                Dapatkan Whitelist Sekarang
               </button>
               <button
-                onClick={() => window.open('https://wa.me/6289655128024', '_blank')}
+                onClick={() => window.open('https://wa.me/6289655128024?text=Halo,%20saya%20ingin%20konsultasi%20tentang%20akun%20whitelist', '_blank')}
                 className="bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white hover:text-cyan-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300"
               >
-                Chat WhatsApp
+                Konsultasi untuk Akun Whitelist
               </button>
             </div>
           </div>

@@ -107,27 +107,33 @@ user_problem_statement: "Build professional landing page for Mawana Digital Serv
 backend:
   - task: "Contact Form API - POST /api/contact"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented POST /api/contact endpoint with validation, MongoDB storage, and error handling in Indonesian. Uses Pydantic ContactCreate model with email validation."
+      - working: true
+        agent: "testing"
+        comment: "✅ BACKEND TESTED: POST /api/contact working correctly. Valid submissions return 200 with success response and generate UUID. Validation working: empty name/phone/message return 422 errors, invalid email returns 422. Data successfully saved to MongoDB contacts collection. Minor: Pydantic V1 validator syntax causes startup warning but doesn't affect functionality."
 
   - task: "Get Contacts API - GET /api/contacts"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented GET /api/contacts endpoint to retrieve all contact submissions sorted by submission date descending."
+      - working: true
+        agent: "testing"
+        comment: "✅ BACKEND TESTED: GET /api/contacts working correctly. Returns all contacts as JSON array, correctly sorted by submittedAt descending. Retrieved 4+ contacts during testing, including newly submitted test data. Response format matches Contact model schema."
 
 frontend:
   - task: "Landing Page - All 11 sections"

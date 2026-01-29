@@ -88,6 +88,14 @@ export const AdminContacts = () => {
               >
                 Kembali ke Home
               </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="mr-2" size={18} />
+                Logout
+              </Button>
             </div>
           </div>
         </div>

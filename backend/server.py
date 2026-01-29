@@ -37,6 +37,29 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+# Contact Form Models
+class ContactCreate(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str
+    organization: Optional[str] = ""
+    message: str
+    
+    @validator('name', 'phone', 'message')
+    def check_not_empty(cls, v, field):
+        if not v or not v.strip():
+            raise ValueError(f'{field.name} tidak boleh kosong')
+        return v.strip()
+
+class Contact(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: str
+    phone: str
+    organization: Optional[str] = ""
+    message: str
+    submittedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():

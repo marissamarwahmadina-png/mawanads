@@ -153,13 +153,13 @@ export const WhitelistDetail = () => {
           <Tabs defaultValue="meta" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="meta" className="text-base">
-                <span className="mr-2">📘</span> Meta Whitelist
+                Meta Whitelist
               </TabsTrigger>
               <TabsTrigger value="google" className="text-base">
-                <span className="mr-2">🔍</span> Google Whitelist
+                Google Whitelist
               </TabsTrigger>
               <TabsTrigger value="tiktok" className="text-base">
-                <span className="mr-2">🎵</span> TikTok Whitelist
+                TikTok Whitelist
               </TabsTrigger>
             </TabsList>
 
@@ -167,9 +167,13 @@ export const WhitelistDetail = () => {
               <TabsContent key={platform.id} value={platform.id}>
                 <Card className="border-2 border-cyan-100">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-3 text-2xl">
-                      <div className={`w-12 h-12 bg-gradient-to-r ${platform.color} rounded-xl flex items-center justify-center text-2xl`}>
-                        {platform.icon}
+                    <CardTitle className="flex items-center space-x-4 text-2xl">
+                      <div className={`w-16 h-16 bg-white rounded-xl flex items-center justify-center p-3 border-2 border-gray-100`}>
+                        <img 
+                          src={platform.logo} 
+                          alt={platform.name}
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                       <span>{platform.name}</span>
                     </CardTitle>

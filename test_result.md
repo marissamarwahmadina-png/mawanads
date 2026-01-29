@@ -168,8 +168,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Contact Form API - POST /api/contact"
-    - "Get Contacts API - GET /api/contacts"
     - "Contact Form Integration"
   stuck_tasks: []
   test_all: false

@@ -32,7 +32,7 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img
-              src="https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/spgbqpn7_mawana%20digital%20services.png"
+              src="https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/z10loxce_Header%20mawanads.svg"
               alt="Mawana Digital Services"
               className="h-12 w-auto"
             />

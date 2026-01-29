@@ -89,6 +89,52 @@ async def get_status_checks():
     
     return status_checks
 
+# Contact Form Routes
+@api_router.post("/contact")
+async def create_contact(contact_data: ContactCreate):
+    """Submit contact form"""
+    try:
+        contact_dict = contact_data.model_dump()
+        contact_obj = Contact(**contact_dict)
+        contact_dict_with_id = contact_obj.model_dump()
+        
+        # Convert datetime to ISO string for MongoDB
+        contact_dict_with_id['submittedAt'] = contact_dict_with_id['submittedAt'].isoformat()
+        
+        # Insert to MongoDB
+        result = await db.contacts.insert_one(contact_dict_with_id)
+        
+        if result.inserted_id:
+            logger.info(f"New contact submission from {contact_obj.email}")
+            return {
+                "success": True,
+                "data": contact_obj.model_dump()
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Gagal menyimpan data")
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error creating contact: {str(e)}")
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
+
+@api_router.get("/contacts", response_model=List[Contact])
+async def get_contacts():
+    """Get all contact submissions (for admin)"""
+    try:
+        contacts = await db.contacts.find({}, {"_id": 0}).sort("submittedAt", -1).to_list(1000)
+        
+        # Convert ISO string timestamps back to datetime objects
+        for contact in contacts:
+            if isinstance(contact['submittedAt'], str):
+                contact['submittedAt'] = datetime.fromisoformat(contact['submittedAt'])
+        
+        return contacts
+    except Exception as e:
+        logger.error(f"Error fetching contacts: {str(e)}")
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
+
 # Include the router in the main app
 app.include_router(api_router)
 

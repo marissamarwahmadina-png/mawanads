@@ -5,11 +5,12 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Phone, Mail, MessageCircle, Send } from 'lucide-react';
-import { mockContactSubmit } from '../mock';
-import { useToast } from '../hooks/use-toast';
+import { toast } from 'sonner';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const ContactSection = () => {
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,11 +32,10 @@ export const ContactSection = () => {
     setIsSubmitting(true);
 
     try {
-      const result = await mockContactSubmit(formData);
+      const response = await axios.post(`${BACKEND_URL}/api/contact`, formData);
       
-      if (result.success) {
-        toast({
-          title: "Pesan Terkirim!",
+      if (response.data.success) {
+        toast.success("Pesan Terkirim!", {
           description: "Terima kasih, kami akan segera menghubungi Anda.",
         });
         setFormData({
@@ -47,10 +47,9 @@ export const ContactSection = () => {
         });
       }
     } catch (error) {
-      toast({
-        title: "Gagal mengirim",
-        description: "Silakan coba lagi atau hubungi via WhatsApp.",
-        variant: "destructive",
+      const errorMessage = error.response?.data?.detail || "Silakan coba lagi atau hubungi via WhatsApp.";
+      toast.error("Gagal mengirim", {
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);

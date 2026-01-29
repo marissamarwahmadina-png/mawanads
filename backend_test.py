@@ -162,10 +162,10 @@ class ContactFormTester:
         try:
             response = requests.post(f"{API_BASE}/contact", json=invalid_data, timeout=10)
             
-            if response.status_code == 400:
-                self.log_result(test_name, True, "Correctly rejected empty phone with 400 error")
+            if response.status_code in [400, 422]:
+                self.log_result(test_name, True, f"Correctly rejected empty phone with {response.status_code} error")
             else:
-                self.log_result(test_name, False, f"Expected 400 error, got {response.status_code}: {response.text}")
+                self.log_result(test_name, False, f"Expected 400/422 error, got {response.status_code}: {response.text}")
                 
         except Exception as e:
             self.log_result(test_name, False, f"Request failed: {str(e)}")

@@ -46,9 +46,9 @@ class ContactCreate(BaseModel):
     message: str
     
     @validator('name', 'phone', 'message')
-    def check_not_empty(cls, v, field):
+    def check_not_empty(cls, v):
         if not v or not v.strip():
-            raise ValueError(f'{field.name} tidak boleh kosong')
+            raise ValueError('Field tidak boleh kosong')
         return v.strip()
 
 class Contact(BaseModel):

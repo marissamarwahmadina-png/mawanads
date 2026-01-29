@@ -34,7 +34,7 @@ export const Header = () => {
             <img
               src="https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/spgbqpn7_mawana%20digital%20services.png"
               alt="Mawana Digital Services"
-              className="h-10 w-auto"
+              className="h-12 w-auto"
             />
           </div>
 

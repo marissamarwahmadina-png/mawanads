@@ -13,7 +13,7 @@ export const Footer = () => {
             <img
               src="https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/spgbqpn7_mawana%20digital%20services.png"
               alt="Mawana Digital Services"
-              className="h-10 w-auto mb-4 bg-white px-3 py-2 rounded"
+              className="h-12 w-auto mb-4 bg-white px-4 py-2 rounded"
             />
             <p className="text-gray-400">
               Partner digital strategis untuk NGO, fundraising, dan brand.

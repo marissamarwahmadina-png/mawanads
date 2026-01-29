@@ -34,6 +34,14 @@ export const Footer = () => {
               </li>
               <li>
                 <button
+                  onClick={() => document.getElementById('whitelist-detail')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="text-gray-400 hover:text-cyan-400 transition-colors"
+                >
+                  Akun Whitelist
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
                   className="text-gray-400 hover:text-cyan-400 transition-colors"
                 >

@@ -97,6 +97,12 @@ export const Header = () => {
               Layanan
             </button>
             <button
+              onClick={() => scrollToSection('whitelist-detail')}
+              className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-cyan-50 hover:text-cyan-600 rounded transition-colors"
+            >
+              Akun Whitelist
+            </button>
+            <button
               onClick={() => scrollToSection('about')}
               className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-cyan-50 hover:text-cyan-600 rounded transition-colors"
             >

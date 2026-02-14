@@ -15,8 +15,8 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Konfigurasi Meta Pixel per affiliator (bisa diubah sesuai kebutuhan)
 const AFFILIATOR_PIXELS = {
-  'dimas': '1234567890', // Ganti dengan Pixel ID real untuk Dimas
-  'default': '' // Pixel ID default jika ada
+  'dimas': '2975682082624536', // Pixel ID untuk Dimas
+  'default': '2975682082624536' // Pixel ID default
 };
 
 export const AffiliateLanding = () => {

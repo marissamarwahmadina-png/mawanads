@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign } from 'lucide-react';
+import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import MetaPixel, { trackLead, trackSubmitApplication } from '../components/MetaPixel';
 

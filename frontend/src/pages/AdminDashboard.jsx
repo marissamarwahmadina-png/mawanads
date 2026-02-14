@@ -74,17 +74,21 @@ export const AdminDashboard = () => {
   // Apply filters for contacts
   useEffect(() => {
     let filtered = contacts.filter(contact => {
-      const matchName = contact.name.toLowerCase().includes(contactFilters.name.toLowerCase());
-      const matchEmail = contact.email.toLowerCase().includes(contactFilters.email.toLowerCase());
-      const matchPhone = contact.phone.includes(contactFilters.phone);
-      const matchOrg = contact.organization.toLowerCase().includes(contactFilters.organization.toLowerCase());
+      const matchName = (contact.name || '').toLowerCase().includes(contactFilters.name.toLowerCase());
+      const matchEmail = (contact.email || '').toLowerCase().includes(contactFilters.email.toLowerCase());
+      const matchPhone = (contact.phone || '').includes(contactFilters.phone);
+      const matchOrg = (contact.organization || '').toLowerCase().includes(contactFilters.organization.toLowerCase());
       
       let matchDate = true;
-      if (contactFilters.startDate && contactFilters.endDate) {
+      if (contactFilters.startDate) {
         const submittedDate = new Date(contact.submittedAt);
-        const startDate = new Date(contactFilters.startDate);
+        matchDate = submittedDate >= new Date(contactFilters.startDate);
+      }
+      if (matchDate && contactFilters.endDate) {
+        const submittedDate = new Date(contact.submittedAt);
         const endDate = new Date(contactFilters.endDate);
-        matchDate = submittedDate >= startDate && submittedDate <= endDate;
+        endDate.setHours(23, 59, 59, 999);
+        matchDate = submittedDate <= endDate;
       }
       
       return matchName && matchEmail && matchPhone && matchOrg && matchDate;
@@ -95,17 +99,21 @@ export const AdminDashboard = () => {
   // Apply filters for leads
   useEffect(() => {
     let filtered = affiliateLeads.filter(lead => {
-      const matchName = lead.name.toLowerCase().includes(leadFilters.name.toLowerCase());
-      const matchEmail = lead.email.toLowerCase().includes(leadFilters.email.toLowerCase());
-      const matchPhone = lead.phone.includes(leadFilters.phone);
-      const matchOrg = lead.organization.toLowerCase().includes(leadFilters.organization.toLowerCase());
+      const matchName = (lead.name || '').toLowerCase().includes(leadFilters.name.toLowerCase());
+      const matchEmail = (lead.email || '').toLowerCase().includes(leadFilters.email.toLowerCase());
+      const matchPhone = (lead.phone || '').includes(leadFilters.phone);
+      const matchOrg = (lead.organization || '').toLowerCase().includes(leadFilters.organization.toLowerCase());
       
       let matchDate = true;
-      if (leadFilters.startDate && leadFilters.endDate) {
+      if (leadFilters.startDate) {
         const submittedDate = new Date(lead.submittedAt);
-        const startDate = new Date(leadFilters.startDate);
+        matchDate = submittedDate >= new Date(leadFilters.startDate);
+      }
+      if (matchDate && leadFilters.endDate) {
+        const submittedDate = new Date(lead.submittedAt);
         const endDate = new Date(leadFilters.endDate);
-        matchDate = submittedDate >= startDate && submittedDate <= endDate;
+        endDate.setHours(23, 59, 59, 999);
+        matchDate = submittedDate <= endDate;
       }
       
       return matchName && matchEmail && matchPhone && matchOrg && matchDate;

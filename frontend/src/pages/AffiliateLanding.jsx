@@ -25,6 +25,8 @@ export const AffiliateLanding = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
+    phone: '',
     organization: '',
     monthly_ad_spend: '',
     message: ''

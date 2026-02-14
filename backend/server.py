@@ -159,6 +159,52 @@ async def get_contacts():
         logger.error(f"Error fetching contacts: {str(e)}")
         raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
 
+# Affiliate Lead Routes
+@api_router.post("/affiliate-lead")
+async def create_affiliate_lead(lead_data: AffiliateLeadCreate):
+    """Submit affiliate lead form"""
+    try:
+        lead_dict = lead_data.model_dump()
+        lead_obj = AffiliateLead(**lead_dict)
+        lead_dict_with_id = lead_obj.model_dump()
+        
+        # Convert datetime to ISO string for MongoDB
+        lead_dict_with_id['submittedAt'] = lead_dict_with_id['submittedAt'].isoformat()
+        
+        # Insert to MongoDB
+        result = await db.affiliate_leads.insert_one(lead_dict_with_id)
+        
+        if result.inserted_id:
+            logger.info(f"New affiliate lead from {lead_obj.affiliator}: {lead_obj.name}")
+            return {
+                "success": True,
+                "data": lead_obj.model_dump()
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Gagal menyimpan data")
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error creating affiliate lead: {str(e)}")
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
+
+@api_router.get("/affiliate-leads", response_model=List[AffiliateLead])
+async def get_affiliate_leads():
+    """Get all affiliate lead submissions (for admin)"""
+    try:
+        leads = await db.affiliate_leads.find({}, {"_id": 0}).sort("submittedAt", -1).to_list(1000)
+        
+        # Convert ISO string timestamps back to datetime objects
+        for lead in leads:
+            if isinstance(lead['submittedAt'], str):
+                lead['submittedAt'] = datetime.fromisoformat(lead['submittedAt'])
+        
+        return leads
+    except Exception as e:
+        logger.error(f"Error fetching affiliate leads: {str(e)}")
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
+
 # Include the router in the main app
 app.include_router(api_router)
 

@@ -15,12 +15,12 @@ export const AdminLogin = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    setTimeout(() => {
-      const success = login(password);
+    try {
+      const success = await login(password);
       
       if (success) {
         toast.success('Login berhasil!', {
@@ -35,8 +35,14 @@ export const AdminLogin = () => {
         });
         setPassword('');
       }
+    } catch (error) {
+      toast.error('Login gagal', {
+        description: 'Terjadi kesalahan. Silakan coba lagi.',
+      });
+      setPassword('');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

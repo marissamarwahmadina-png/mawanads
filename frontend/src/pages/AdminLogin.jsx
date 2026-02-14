@@ -27,7 +27,7 @@ export const AdminLogin = () => {
           description: 'Mengalihkan ke halaman admin...',
         });
         setTimeout(() => {
-          navigate('/admin/contacts');
+          navigate('/admin/dashboard');
         }, 500);
       } else {
         toast.error('Login gagal', {

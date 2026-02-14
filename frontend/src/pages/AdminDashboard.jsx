@@ -221,6 +221,7 @@ export const AdminDashboard = () => {
             </div>
             <div className="flex gap-4">
               <Button
+                data-testid="refresh-btn"
                 onClick={fetchData}
                 className="bg-cyan-500 hover:bg-cyan-600 text-white"
               >
@@ -228,12 +229,14 @@ export const AdminDashboard = () => {
                 Refresh
               </Button>
               <Button
+                data-testid="home-btn"
                 onClick={() => window.location.href = '/'}
                 variant="outline"
               >
                 Home
               </Button>
               <Button
+                data-testid="logout-btn"
                 onClick={handleLogout}
                 variant="outline"
                 className="border-red-300 text-red-600 hover:bg-red-50"
@@ -253,12 +256,12 @@ export const AdminDashboard = () => {
         )}
 
         {/* Tabs */}
-        <Tabs defaultValue="contacts" className="w-full">
+        <Tabs defaultValue="contacts" className="w-full" data-testid="dashboard-tabs">
           <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="contacts">
+            <TabsTrigger value="contacts" data-testid="tab-contacts">
               Contact Form ({filteredContacts.length})
             </TabsTrigger>
-            <TabsTrigger value="affiliates">
+            <TabsTrigger value="affiliates" data-testid="tab-affiliates">
               Affiliate Leads ({filteredLeads.length})
             </TabsTrigger>
           </TabsList>
@@ -325,10 +328,10 @@ export const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={resetContactFilters} variant="outline" size="sm">
+                  <Button data-testid="reset-contact-filter-btn" onClick={resetContactFilters} variant="outline" size="sm">
                     Reset Filter
                   </Button>
-                  <Button onClick={exportContactsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                  <Button data-testid="export-contacts-btn" onClick={exportContactsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
                     <Download className="mr-2" size={16} />
                     Export to Excel ({filteredContacts.length} data)
                   </Button>
@@ -495,10 +498,10 @@ export const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={resetLeadFilters} variant="outline" size="sm">
+                  <Button data-testid="reset-lead-filter-btn" onClick={resetLeadFilters} variant="outline" size="sm">
                     Reset Filter
                   </Button>
-                  <Button onClick={exportLeadsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                  <Button data-testid="export-leads-btn" onClick={exportLeadsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
                     <Download className="mr-2" size={16} />
                     Export to Excel ({filteredLeads.length} data)
                   </Button>

@@ -4,18 +4,43 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Mail, Phone, Building, Calendar, User, MessageSquare, RefreshCw, LogOut, DollarSign, UserCheck } from 'lucide-react';
+import { Mail, Phone, Building, Calendar, User, MessageSquare, RefreshCw, LogOut, DollarSign, UserCheck, Download, Search, Filter } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { format, parseISO } from 'date-fns';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const AdminDashboard = () => {
   const [contacts, setContacts] = useState([]);
   const [affiliateLeads, setAffiliateLeads] = useState([]);
+  const [filteredContacts, setFilteredContacts] = useState([]);
+  const [filteredLeads, setFilteredLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  // Filter states for Contacts
+  const [contactFilters, setContactFilters] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    startDate: '',
+    endDate: ''
+  });
+
+  // Filter states for Affiliate Leads
+  const [leadFilters, setLeadFilters] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    startDate: '',
+    endDate: ''
+  });
 
   const handleLogout = () => {
     logout();
@@ -32,6 +57,8 @@ export const AdminDashboard = () => {
       ]);
       setContacts(contactsRes.data);
       setAffiliateLeads(leadsRes.data);
+      setFilteredContacts(contactsRes.data);
+      setFilteredLeads(leadsRes.data);
     } catch (err) {
       setError('Gagal memuat data');
       console.error('Error fetching data:', err);
@@ -44,14 +71,116 @@ export const AdminDashboard = () => {
     fetchData();
   }, []);
 
+  // Apply filters for contacts
+  useEffect(() => {
+    let filtered = contacts.filter(contact => {
+      const matchName = contact.name.toLowerCase().includes(contactFilters.name.toLowerCase());
+      const matchEmail = contact.email.toLowerCase().includes(contactFilters.email.toLowerCase());
+      const matchPhone = contact.phone.includes(contactFilters.phone);
+      const matchOrg = contact.organization.toLowerCase().includes(contactFilters.organization.toLowerCase());
+      
+      let matchDate = true;
+      if (contactFilters.startDate && contactFilters.endDate) {
+        const submittedDate = new Date(contact.submittedAt);
+        const startDate = new Date(contactFilters.startDate);
+        const endDate = new Date(contactFilters.endDate);
+        matchDate = submittedDate >= startDate && submittedDate <= endDate;
+      }
+      
+      return matchName && matchEmail && matchPhone && matchOrg && matchDate;
+    });
+    setFilteredContacts(filtered);
+  }, [contactFilters, contacts]);
+
+  // Apply filters for leads
+  useEffect(() => {
+    let filtered = affiliateLeads.filter(lead => {
+      const matchName = lead.name.toLowerCase().includes(leadFilters.name.toLowerCase());
+      const matchEmail = lead.email.toLowerCase().includes(leadFilters.email.toLowerCase());
+      const matchPhone = lead.phone.includes(leadFilters.phone);
+      const matchOrg = lead.organization.toLowerCase().includes(leadFilters.organization.toLowerCase());
+      
+      let matchDate = true;
+      if (leadFilters.startDate && leadFilters.endDate) {
+        const submittedDate = new Date(lead.submittedAt);
+        const startDate = new Date(leadFilters.startDate);
+        const endDate = new Date(leadFilters.endDate);
+        matchDate = submittedDate >= startDate && submittedDate <= endDate;
+      }
+      
+      return matchName && matchEmail && matchPhone && matchOrg && matchDate;
+    });
+    setFilteredLeads(filtered);
+  }, [leadFilters, affiliateLeads]);
+
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    try {
+      const date = parseISO(dateString);
+      return format(date, 'dd MMMM yyyy HH:mm');
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Export to Excel - Contacts
+  const exportContactsToExcel = () => {
+    const dataToExport = filteredContacts.map(contact => ({
+      'Tanggal': formatDate(contact.submittedAt),
+      'Nama': contact.name,
+      'Email': contact.email,
+      'Telepon': contact.phone,
+      'Organisasi': contact.organization || '-',
+      'Pesan': contact.message
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Contact Form');
+    
+    const fileName = `Contact_Form_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  // Export to Excel - Affiliate Leads
+  const exportLeadsToExcel = () => {
+    const dataToExport = filteredLeads.map(lead => ({
+      'Tanggal': formatDate(lead.submittedAt),
+      'Nama': lead.name,
+      'Email': lead.email,
+      'WhatsApp': lead.phone,
+      'Organisasi/Bisnis': lead.organization,
+      'Monthly Ad Spend': lead.monthly_ad_spend,
+      'Pesan': lead.message,
+      'Affiliator': lead.affiliator
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Affiliate Leads');
+    
+    const fileName = `Affiliate_Leads_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const resetContactFilters = () => {
+    setContactFilters({
+      name: '',
+      email: '',
+      phone: '',
+      organization: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
+
+  const resetLeadFilters = () => {
+    setLeadFilters({
+      name: '',
+      email: '',
+      phone: '',
+      organization: '',
+      startDate: '',
+      endDate: ''
     });
   };
 
@@ -119,30 +248,102 @@ export const AdminDashboard = () => {
         <Tabs defaultValue="contacts" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="contacts">
-              Contact Form ({contacts.length})
+              Contact Form ({filteredContacts.length})
             </TabsTrigger>
             <TabsTrigger value="affiliates">
-              Affiliate Leads ({affiliateLeads.length})
+              Affiliate Leads ({filteredLeads.length})
             </TabsTrigger>
           </TabsList>
 
           {/* Contacts Tab */}
           <TabsContent value="contacts">
-            {contacts.length === 0 ? (
+            {/* Filters */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Filter size={20} />
+                  <span>Filter & Search</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Nama</label>
+                    <Input
+                      placeholder="Cari nama..."
+                      value={contactFilters.name}
+                      onChange={(e) => setContactFilters({...contactFilters, name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Email</label>
+                    <Input
+                      placeholder="Cari email..."
+                      value={contactFilters.email}
+                      onChange={(e) => setContactFilters({...contactFilters, email: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Telepon</label>
+                    <Input
+                      placeholder="Cari nomor..."
+                      value={contactFilters.phone}
+                      onChange={(e) => setContactFilters({...contactFilters, phone: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Organisasi</label>
+                    <Input
+                      placeholder="Cari organisasi..."
+                      value={contactFilters.organization}
+                      onChange={(e) => setContactFilters({...contactFilters, organization: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Dari Tanggal</label>
+                    <Input
+                      type="date"
+                      value={contactFilters.startDate}
+                      onChange={(e) => setContactFilters({...contactFilters, startDate: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Sampai Tanggal</label>
+                    <Input
+                      type="date"
+                      value={contactFilters.endDate}
+                      onChange={(e) => setContactFilters({...contactFilters, endDate: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={resetContactFilters} variant="outline" size="sm">
+                    Reset Filter
+                  </Button>
+                  <Button onClick={exportContactsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                    <Download className="mr-2" size={16} />
+                    Export to Excel ({filteredContacts.length} data)
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contacts List */}
+            {filteredContacts.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <MessageSquare className="mx-auto mb-4 text-gray-400" size={64} />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Belum Ada Submission
+                    Tidak Ada Data
                   </h3>
                   <p className="text-gray-600">
-                    Form kontak belum ada yang mengirim pesan
+                    {contacts.length === 0 ? 'Belum ada submission' : 'Tidak ada data yang sesuai dengan filter'}
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {contacts.map((contact) => (
+                {filteredContacts.map((contact) => (
                   <Card key={contact.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50">
                       <CardTitle className="flex items-center justify-between">
@@ -226,21 +427,93 @@ export const AdminDashboard = () => {
 
           {/* Affiliate Leads Tab */}
           <TabsContent value="affiliates">
-            {affiliateLeads.length === 0 ? (
+            {/* Filters */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Filter size={20} />
+                  <span>Filter & Search</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Nama</label>
+                    <Input
+                      placeholder="Cari nama..."
+                      value={leadFilters.name}
+                      onChange={(e) => setLeadFilters({...leadFilters, name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Email</label>
+                    <Input
+                      placeholder="Cari email..."
+                      value={leadFilters.email}
+                      onChange={(e) => setLeadFilters({...leadFilters, email: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">WhatsApp</label>
+                    <Input
+                      placeholder="Cari nomor..."
+                      value={leadFilters.phone}
+                      onChange={(e) => setLeadFilters({...leadFilters, phone: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Bisnis/Perusahaan</label>
+                    <Input
+                      placeholder="Cari bisnis..."
+                      value={leadFilters.organization}
+                      onChange={(e) => setLeadFilters({...leadFilters, organization: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Dari Tanggal</label>
+                    <Input
+                      type="date"
+                      value={leadFilters.startDate}
+                      onChange={(e) => setLeadFilters({...leadFilters, startDate: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Sampai Tanggal</label>
+                    <Input
+                      type="date"
+                      value={leadFilters.endDate}
+                      onChange={(e) => setLeadFilters({...leadFilters, endDate: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={resetLeadFilters} variant="outline" size="sm">
+                    Reset Filter
+                  </Button>
+                  <Button onClick={exportLeadsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                    <Download className="mr-2" size={16} />
+                    Export to Excel ({filteredLeads.length} data)
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Leads List */}
+            {filteredLeads.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <UserCheck className="mx-auto mb-4 text-gray-400" size={64} />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Belum Ada Affiliate Lead
+                    Tidak Ada Data
                   </h3>
                   <p className="text-gray-600">
-                    Belum ada submission dari affiliate landing page
+                    {affiliateLeads.length === 0 ? 'Belum ada affiliate lead' : 'Tidak ada data yang sesuai dengan filter'}
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {affiliateLeads.map((lead) => (
+                {filteredLeads.map((lead) => (
                   <Card key={lead.id} className="hover:shadow-lg transition-shadow border-l-4 border-blue-500">
                     <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
                       <CardTitle className="flex items-center justify-between">

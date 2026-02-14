@@ -267,9 +267,9 @@ export const AdminDashboard = () => {
           </TabsList>
 
           {/* Contacts Tab */}
-          <TabsContent value="contacts">
+          <TabsContent value="contacts" data-testid="contacts-tab-content">
             {/* Filters */}
-            <Card className="mb-6">
+            <Card className="mb-6" data-testid="contact-filter-card">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Filter size={20} />
@@ -281,6 +281,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Nama</label>
                     <Input
+                      data-testid="contact-filter-name"
                       placeholder="Cari nama..."
                       value={contactFilters.name}
                       onChange={(e) => setContactFilters({...contactFilters, name: e.target.value})}
@@ -289,6 +290,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Email</label>
                     <Input
+                      data-testid="contact-filter-email"
                       placeholder="Cari email..."
                       value={contactFilters.email}
                       onChange={(e) => setContactFilters({...contactFilters, email: e.target.value})}
@@ -297,6 +299,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Telepon</label>
                     <Input
+                      data-testid="contact-filter-phone"
                       placeholder="Cari nomor..."
                       value={contactFilters.phone}
                       onChange={(e) => setContactFilters({...contactFilters, phone: e.target.value})}
@@ -305,6 +308,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Organisasi</label>
                     <Input
+                      data-testid="contact-filter-org"
                       placeholder="Cari organisasi..."
                       value={contactFilters.organization}
                       onChange={(e) => setContactFilters({...contactFilters, organization: e.target.value})}
@@ -313,6 +317,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Dari Tanggal</label>
                     <Input
+                      data-testid="contact-filter-start-date"
                       type="date"
                       value={contactFilters.startDate}
                       onChange={(e) => setContactFilters({...contactFilters, startDate: e.target.value})}
@@ -321,6 +326,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Sampai Tanggal</label>
                     <Input
+                      data-testid="contact-filter-end-date"
                       type="date"
                       value={contactFilters.endDate}
                       onChange={(e) => setContactFilters({...contactFilters, endDate: e.target.value})}
@@ -439,9 +445,9 @@ export const AdminDashboard = () => {
           </TabsContent>
 
           {/* Affiliate Leads Tab */}
-          <TabsContent value="affiliates">
+          <TabsContent value="affiliates" data-testid="leads-tab-content">
             {/* Filters */}
-            <Card className="mb-6">
+            <Card className="mb-6" data-testid="lead-filter-card">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Filter size={20} />
@@ -453,6 +459,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Nama</label>
                     <Input
+                      data-testid="lead-filter-name"
                       placeholder="Cari nama..."
                       value={leadFilters.name}
                       onChange={(e) => setLeadFilters({...leadFilters, name: e.target.value})}
@@ -461,6 +468,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Email</label>
                     <Input
+                      data-testid="lead-filter-email"
                       placeholder="Cari email..."
                       value={leadFilters.email}
                       onChange={(e) => setLeadFilters({...leadFilters, email: e.target.value})}
@@ -469,6 +477,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">WhatsApp</label>
                     <Input
+                      data-testid="lead-filter-phone"
                       placeholder="Cari nomor..."
                       value={leadFilters.phone}
                       onChange={(e) => setLeadFilters({...leadFilters, phone: e.target.value})}
@@ -477,6 +486,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Bisnis/Perusahaan</label>
                     <Input
+                      data-testid="lead-filter-org"
                       placeholder="Cari bisnis..."
                       value={leadFilters.organization}
                       onChange={(e) => setLeadFilters({...leadFilters, organization: e.target.value})}
@@ -485,6 +495,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Dari Tanggal</label>
                     <Input
+                      data-testid="lead-filter-start-date"
                       type="date"
                       value={leadFilters.startDate}
                       onChange={(e) => setLeadFilters({...leadFilters, startDate: e.target.value})}
@@ -493,6 +504,7 @@ export const AdminDashboard = () => {
                   <div>
                     <label className="text-sm text-gray-600 mb-1 block">Sampai Tanggal</label>
                     <Input
+                      data-testid="lead-filter-end-date"
                       type="date"
                       value={leadFilters.endDate}
                       onChange={(e) => setLeadFilters({...leadFilters, endDate: e.target.value})}

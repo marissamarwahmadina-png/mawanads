@@ -3,7 +3,8 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import AdminLogin from "./pages/AdminLogin";
-import AdminContacts from "./pages/AdminContacts";
+import AdminDashboard from "./pages/AdminDashboard";
+import AffiliateLanding from "./pages/AffiliateLanding";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -17,13 +18,14 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
-              path="/admin/contacts"
+              path="/admin/dashboard"
               element={
                 <ProtectedRoute>
-                  <AdminContacts />
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />
+            <Route path="/affiliate/:affiliator" element={<AffiliateLanding />} />
           </Routes>
         </BrowserRouter>
         <Toaster />

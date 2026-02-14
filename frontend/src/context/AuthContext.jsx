@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext();
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -15,29 +17,37 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const authToken = localStorage.getItem('mawana_admin_auth');
-    if (authToken === 'authenticated') {
+    // Check if user has valid token
+    const token = localStorage.getItem('mawana_admin_token');
+    if (token) {
+      // TODO: Verify token with backend if needed
       setIsAuthenticated(true);
     }
     setLoading(false);
   }, []);
 
-  const login = (password) => {
-    // Simple password check (you can change this password)
-    const ADMIN_PASSWORD = 'mawana2025admin'; // ⚠️ CHANGE THIS PASSWORD!
-    
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      localStorage.setItem('mawana_admin_auth', 'authenticated');
-      return true;
+  const login = async (password) => {
+    try {
+      // Call backend API for authentication
+      const response = await axios.post(`${BACKEND_URL}/api/admin/login`, {
+        password: password
+      });
+      
+      if (response.data.access_token) {
+        setIsAuthenticated(true);
+        localStorage.setItem('mawana_admin_token', response.data.access_token);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('mawana_admin_auth');
+    localStorage.removeItem('mawana_admin_token');
   };
 
   return (

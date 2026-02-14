@@ -29,6 +29,22 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Test MongoDB connection on startup
+@app.on_event("startup")
+async def startup_db_client():
+    try:
+        # Test the connection
+        await client.admin.command('ping')
+        logger.info("Successfully connected to MongoDB")
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {str(e)}")
+        # Don't raise - let app start but log the error
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
+    logger.info("MongoDB connection closed")
+
 # Create the main app without a prefix
 app = FastAPI(redirect_slashes=False)
 

@@ -269,7 +269,7 @@ export const AffiliateLanding = () => {
                     <div>
                       <Label htmlFor="organization" className="flex items-center space-x-2">
                         <Building size={16} />
-                        <span>Asal Lembaga/Perusahaan *</span>
+                        <span>Nama Bisnis/Perusahaan *</span>
                       </Label>
                       <Input
                         id="organization"
@@ -277,7 +277,7 @@ export const AffiliateLanding = () => {
                         value={formData.organization}
                         onChange={handleChange}
                         required
-                        placeholder="PT/Yayasan/NGO Anda"
+                        placeholder="Nama bisnis atau perusahaan Anda"
                         className="mt-2"
                       />
                     </div>

@@ -81,7 +81,6 @@ class AffiliateLead(BaseModel):
     monthly_ad_spend: str
     message: str
     affiliator: str
-    submittedAt: datetime = Field(default_factory=datetime.utcnow)
     submittedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Add your routes to the router instead of directly to app

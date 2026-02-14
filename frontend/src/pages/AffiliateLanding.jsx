@@ -92,6 +92,8 @@ export const AffiliateLanding = () => {
         // Reset form
         setFormData({
           name: '',
+          email: '',
+          phone: '',
           organization: '',
           monthly_ad_spend: '',
           message: ''

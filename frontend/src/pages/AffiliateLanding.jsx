@@ -176,11 +176,6 @@ export const AffiliateLanding = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Partner strategis untuk NGO, fundraising, dan brand yang ingin bertumbuh melalui iklan digital yang aman, terukur, dan profitable.
             </p>
-            {affiliator && (
-              <div className="mt-6 inline-block bg-cyan-100 text-cyan-800 px-6 py-2 rounded-full font-semibold">
-                Referral dari: {affiliator.charAt(0).toUpperCase() + affiliator.slice(1)}
-              </div>
-            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

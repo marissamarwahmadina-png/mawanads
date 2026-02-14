@@ -283,6 +283,30 @@ export const AdminDashboard = () => {
                             <p className="text-gray-900 font-medium">{lead.monthly_ad_spend}</p>
                           </div>
                         </div>
+                        <div className="flex items-start space-x-3">
+                          <Mail className="text-blue-600 flex-shrink-0 mt-1" size={20} />
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Email</p>
+                            <a 
+                              href={`mailto:${lead.email}`}
+                              className="text-gray-900 font-medium hover:text-blue-600"
+                            >
+                              {lead.email}
+                            </a>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <Phone className="text-blue-600 flex-shrink-0 mt-1" size={20} />
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">WhatsApp</p>
+                            <a 
+                              href={`tel:${lead.phone}`}
+                              className="text-gray-900 font-medium hover:text-blue-600"
+                            >
+                              {lead.phone}
+                            </a>
+                          </div>
+                        </div>
                       </div>
                       <div className="border-t pt-4">
                         <div className="flex items-start space-x-3">
@@ -292,6 +316,22 @@ export const AdminDashboard = () => {
                             <p className="text-gray-900 whitespace-pre-wrap">{lead.message}</p>
                           </div>
                         </div>
+                      </div>
+                      <div className="border-t mt-4 pt-4 flex gap-3">
+                        <Button
+                          onClick={() => window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                          className="bg-green-500 hover:bg-green-600 text-white"
+                          size="sm"
+                        >
+                          WhatsApp
+                        </Button>
+                        <Button
+                          onClick={() => window.location.href = `mailto:${lead.email}`}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Email
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

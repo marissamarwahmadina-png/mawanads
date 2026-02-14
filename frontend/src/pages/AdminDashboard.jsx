@@ -353,9 +353,9 @@ export const AdminDashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-6" data-testid="contacts-list">
                 {filteredContacts.map((contact) => (
-                  <Card key={contact.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={contact.id} data-testid={`contact-card-${contact.id}`} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50">
                       <CardTitle className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -415,6 +415,7 @@ export const AdminDashboard = () => {
                       </div>
                       <div className="border-t mt-4 pt-4 flex gap-3">
                         <Button
+                          data-testid={`contact-whatsapp-${contact.id}`}
                           onClick={() => window.open(`https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`, '_blank')}
                           className="bg-green-500 hover:bg-green-600 text-white"
                           size="sm"
@@ -422,6 +423,7 @@ export const AdminDashboard = () => {
                           WhatsApp
                         </Button>
                         <Button
+                          data-testid={`contact-email-${contact.id}`}
                           onClick={() => window.location.href = `mailto:${contact.email}`}
                           variant="outline"
                           size="sm"
@@ -523,9 +525,9 @@ export const AdminDashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-6" data-testid="leads-list">
                 {filteredLeads.map((lead) => (
-                  <Card key={lead.id} className="hover:shadow-lg transition-shadow border-l-4 border-blue-500">
+                  <Card key={lead.id} data-testid={`lead-card-${lead.id}`} className="hover:shadow-lg transition-shadow border-l-4 border-blue-500">
                     <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
                       <CardTitle className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -603,6 +605,7 @@ export const AdminDashboard = () => {
                       </div>
                       <div className="border-t mt-4 pt-4 flex gap-3">
                         <Button
+                          data-testid={`lead-whatsapp-${lead.id}`}
                           onClick={() => window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`, '_blank')}
                           className="bg-green-500 hover:bg-green-600 text-white"
                           size="sm"
@@ -610,6 +613,7 @@ export const AdminDashboard = () => {
                           WhatsApp
                         </Button>
                         <Button
+                          data-testid={`lead-email-${lead.id}`}
                           onClick={() => window.location.href = `mailto:${lead.email}`}
                           variant="outline"
                           size="sm"

@@ -97,6 +97,14 @@ class AffiliateLead(BaseModel):
     affiliator: str
     submittedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# Admin Auth Models
+class AdminLogin(BaseModel):
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():

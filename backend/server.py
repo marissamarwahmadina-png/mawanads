@@ -278,6 +278,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# MongoDB startup and shutdown handlers
+@app.on_event("startup")
+async def startup_db_client():
+    try:
+        # Test the connection
+        await client.admin.command('ping')
+        logger.info("Successfully connected to MongoDB")
+        
+        # Create indexes for better performance
+        try:
+            await db.contacts.create_index([("submittedAt", -1)])
+            await db.affiliate_leads.create_index([("submittedAt", -1)])
+            await db.affiliate_leads.create_index([("affiliator", 1)])
+            logger.info("MongoDB indexes created successfully")
+        except Exception as e:
+            logger.warning(f"Failed to create indexes: {str(e)}")
+            
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {str(e)}")
+        # Don't raise - let app start but log the error
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
+    logger.info("MongoDB connection closed")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

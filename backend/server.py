@@ -63,12 +63,14 @@ class Contact(BaseModel):
 # Affiliate Lead Models
 class AffiliateLeadCreate(BaseModel):
     name: str
+    email: EmailStr
+    phone: str
     organization: str
     monthly_ad_spend: str
     message: str
     affiliator: str
     
-    @validator('name', 'organization', 'monthly_ad_spend', 'message')
+    @validator('name', 'phone', 'organization', 'monthly_ad_spend', 'message')
     def check_not_empty(cls, v):
         if not v or not v.strip():
             raise ValueError('Field tidak boleh kosong')
@@ -77,6 +79,8 @@ class AffiliateLeadCreate(BaseModel):
 class AffiliateLead(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
+    email: str
+    phone: str
     organization: str
     monthly_ad_spend: str
     message: str

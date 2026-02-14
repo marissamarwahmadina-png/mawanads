@@ -110,6 +110,35 @@ class Token(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+# Admin Authentication Routes
+@api_router.post("/admin/login", response_model=Token)
+async def admin_login(credentials: AdminLogin):
+    """Admin login endpoint"""
+    # Get admin password from environment variable
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'mawana2025admin')
+    
+    if credentials.password != admin_password:
+        raise HTTPException(
+            status_code=401,
+            detail="Password salah"
+        )
+    
+    # Create JWT token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + access_token_expires
+    
+    to_encode = {
+        "sub": "admin",
+        "exp": expire
+    }
+    
+    access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
     status_dict = input.model_dump()

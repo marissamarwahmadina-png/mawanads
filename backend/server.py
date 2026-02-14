@@ -58,6 +58,30 @@ class Contact(BaseModel):
     phone: str
     organization: Optional[str] = ""
     message: str
+    submittedAt: datetime = Field(default_factory=datetime.utcnow)
+
+# Affiliate Lead Models
+class AffiliateLeadCreate(BaseModel):
+    name: str
+    organization: str
+    monthly_ad_spend: str
+    message: str
+    affiliator: str
+    
+    @validator('name', 'organization', 'monthly_ad_spend', 'message')
+    def check_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Field tidak boleh kosong')
+        return v.strip()
+
+class AffiliateLead(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    organization: str
+    monthly_ad_spend: str
+    message: str
+    affiliator: str
+    submittedAt: datetime = Field(default_factory=datetime.utcnow)
     submittedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Add your routes to the router instead of directly to app

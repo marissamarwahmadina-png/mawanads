@@ -238,6 +238,40 @@ export const AffiliateLanding = () => {
                     </div>
 
                     <div>
+                      <Label htmlFor="email" className="flex items-center space-x-2">
+                        <Mail size={16} />
+                        <span>Email *</span>
+                      </Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        placeholder="email@example.com"
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone" className="flex items-center space-x-2">
+                        <Phone size={16} />
+                        <span>Nomor WhatsApp *</span>
+                      </Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                        placeholder="08xx-xxxx-xxxx"
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div>
                       <Label htmlFor="organization" className="flex items-center space-x-2">
                         <Building size={16} />
                         <span>Asal Lembaga/Perusahaan *</span>

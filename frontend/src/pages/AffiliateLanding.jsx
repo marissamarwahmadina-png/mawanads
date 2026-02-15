@@ -107,12 +107,7 @@ export const AffiliateLanding = () => {
 
       {/* Header */}
       <div className="bg-slate-900 border-b border-slate-700/50 py-4">
-        <div className="container mx-auto px-4">
-          <img
-            src="https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/z10loxce_Header%20mawanads.svg"
-            alt="Mawana Digital Services"
-            className="h-10 w-auto"
-          />
+        <div className="container mx-auto px-4 h-10">
         </div>
       </div>
 
@@ -282,7 +277,7 @@ export const AffiliateLanding = () => {
                   </Button>
 
                   <p className="text-xs text-center text-slate-400 mt-4">
-                    Dengan mengirim form ini, Anda setuju untuk dihubungi oleh tim Mawana Digital Services
+                    Dengan mengirim form ini, Anda setuju untuk dihubungi oleh tim kami
                   </p>
                 </form>
               </CardContent>

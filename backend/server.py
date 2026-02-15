@@ -209,6 +209,33 @@ async def create_contact(contact_data: ContactCreate):
         
         if result.inserted_id:
             logger.info(f"New contact submission from {contact_obj.email}")
+            
+            # Send admin notification email
+            asyncio.create_task(send_admin_notification(
+                subject=f"Lead Baru dari Contact Form: {contact_obj.name}",
+                html_content=f"""
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(to right, #06b6d4, #2563eb); padding: 20px; text-align: center;">
+                        <h1 style="color: white; margin: 0;">Lead Baru - Contact Form</h1>
+                    </div>
+                    <div style="padding: 24px; background: #f9fafb;">
+                        <h2 style="color: #111827;">Detail Lead:</h2>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px; font-weight: bold; color: #6b7280;">Nama</td><td style="padding: 8px;">{contact_obj.name}</td></tr>
+                            <tr style="background: #f3f4f6;"><td style="padding: 8px; font-weight: bold; color: #6b7280;">Email</td><td style="padding: 8px;">{contact_obj.email}</td></tr>
+                            <tr><td style="padding: 8px; font-weight: bold; color: #6b7280;">Telepon</td><td style="padding: 8px;">{contact_obj.phone}</td></tr>
+                            <tr style="background: #f3f4f6;"><td style="padding: 8px; font-weight: bold; color: #6b7280;">Organisasi</td><td style="padding: 8px;">{contact_obj.organization or '-'}</td></tr>
+                            <tr><td style="padding: 8px; font-weight: bold; color: #6b7280;">Pesan</td><td style="padding: 8px;">{contact_obj.message}</td></tr>
+                        </table>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <a href="https://wa.me/{contact_obj.phone.replace(' ', '').replace('-', '')}" style="display: inline-block; padding: 12px 24px; background: #22c55e; color: white; text-decoration: none; border-radius: 8px; margin-right: 8px;">WhatsApp</a>
+                            <a href="mailto:{contact_obj.email}" style="display: inline-block; padding: 12px 24px; background: #06b6d4; color: white; text-decoration: none; border-radius: 8px;">Email</a>
+                        </div>
+                    </div>
+                </div>
+                """
+            ))
+            
             return {
                 "success": True,
                 "data": contact_obj.model_dump()

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminContacts from "./pages/AdminContacts";
 import AffiliateLanding from "./pages/AffiliateLanding";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -23,6 +24,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/contact"
+              element={
+                <ProtectedRoute>
+                  <AdminContacts />
                 </ProtectedRoute>
               }
             />

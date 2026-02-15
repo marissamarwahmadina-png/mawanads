@@ -1,51 +1,95 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Mail, Phone, Building, Calendar, User, MessageSquare, RefreshCw, LogOut, DollarSign, UserCheck, Download, Search, Filter } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import { format, parseISO } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import { Users, UserCheck, TrendingUp, Database, RefreshCw, LogOut, Calendar } from 'lucide-react';
+import { format, parseISO, startOfDay, startOfWeek, startOfMonth, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, subDays, subMonths, isWithinInterval } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+const COLORS = ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#6366f1'];
+
+const periodOptions = [
+  { key: 'daily', label: 'Harian' },
+  { key: 'weekly', label: 'Mingguan' },
+  { key: 'monthly', label: 'Bulanan' },
+  { key: 'yearly', label: 'Tahunan' },
+];
+
+const dateRangePresets = [
+  { key: '7d', label: '7 Hari', days: 7 },
+  { key: '30d', label: '30 Hari', days: 30 },
+  { key: '90d', label: '3 Bulan', days: 90 },
+  { key: '365d', label: '1 Tahun', days: 365 },
+  { key: 'all', label: 'Semua', days: null },
+];
+
+function groupByPeriod(items, period, startDate, endDate) {
+  const filtered = items.filter(item => {
+    const d = new Date(item.submittedAt);
+    return d >= startDate && d <= endDate;
+  });
+
+  const map = {};
+
+  if (period === 'daily') {
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    days.forEach(day => {
+      const key = format(day, 'yyyy-MM-dd');
+      map[key] = { label: format(day, 'dd MMM', { locale: idLocale }), contacts: 0, affiliates: 0 };
+    });
+  } else if (period === 'weekly') {
+    const weeks = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+    weeks.forEach(week => {
+      const key = format(week, 'yyyy-ww');
+      map[key] = { label: format(week, 'dd MMM', { locale: idLocale }), contacts: 0, affiliates: 0 };
+    });
+  } else if (period === 'monthly') {
+    const months = eachMonthOfInterval({ start: startDate, end: endDate });
+    months.forEach(month => {
+      const key = format(month, 'yyyy-MM');
+      map[key] = { label: format(month, 'MMM yyyy', { locale: idLocale }), contacts: 0, affiliates: 0 };
+    });
+  } else {
+    filtered.forEach(item => {
+      const d = new Date(item.submittedAt);
+      const key = format(d, 'yyyy');
+      if (!map[key]) map[key] = { label: key, contacts: 0, affiliates: 0 };
+    });
+  }
+
+  filtered.forEach(item => {
+    const d = new Date(item.submittedAt);
+    let key;
+    if (period === 'daily') key = format(d, 'yyyy-MM-dd');
+    else if (period === 'weekly') key = format(startOfWeek(d, { weekStartsOn: 1 }), 'yyyy-ww');
+    else if (period === 'monthly') key = format(d, 'yyyy-MM');
+    else key = format(d, 'yyyy');
+
+    if (map[key]) {
+      if (item._type === 'contact') map[key].contacts++;
+      else map[key].affiliates++;
+    }
+  });
+
+  return Object.values(map);
+}
 
 export const AdminDashboard = () => {
   const [contacts, setContacts] = useState([]);
   const [affiliateLeads, setAffiliateLeads] = useState([]);
-  const [filteredContacts, setFilteredContacts] = useState([]);
-  const [filteredLeads, setFilteredLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [period, setPeriod] = useState('daily');
+  const [dateRange, setDateRange] = useState('30d');
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  // Filter states for Contacts
-  const [contactFilters, setContactFilters] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    startDate: '',
-    endDate: ''
-  });
-
-  // Filter states for Affiliate Leads
-  const [leadFilters, setLeadFilters] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    startDate: '',
-    endDate: ''
-  });
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
-  };
+  const handleLogout = () => { logout(); navigate('/admin/login'); };
 
   const fetchData = async () => {
     setLoading(true);
@@ -57,148 +101,56 @@ export const AdminDashboard = () => {
       ]);
       setContacts(contactsRes.data);
       setAffiliateLeads(leadsRes.data);
-      setFilteredContacts(contactsRes.data);
-      setFilteredLeads(leadsRes.data);
     } catch (err) {
       setError('Gagal memuat data');
-      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  // Apply filters for contacts
-  useEffect(() => {
-    let filtered = contacts.filter(contact => {
-      const matchName = (contact.name || '').toLowerCase().includes(contactFilters.name.toLowerCase());
-      const matchEmail = (contact.email || '').toLowerCase().includes(contactFilters.email.toLowerCase());
-      const matchPhone = (contact.phone || '').includes(contactFilters.phone);
-      const matchOrg = (contact.organization || '').toLowerCase().includes(contactFilters.organization.toLowerCase());
-      
-      let matchDate = true;
-      if (contactFilters.startDate) {
-        const submittedDate = new Date(contact.submittedAt);
-        matchDate = submittedDate >= new Date(contactFilters.startDate);
-      }
-      if (matchDate && contactFilters.endDate) {
-        const submittedDate = new Date(contact.submittedAt);
-        const endDate = new Date(contactFilters.endDate);
-        endDate.setHours(23, 59, 59, 999);
-        matchDate = submittedDate <= endDate;
-      }
-      
-      return matchName && matchEmail && matchPhone && matchOrg && matchDate;
-    });
-    setFilteredContacts(filtered);
-  }, [contactFilters, contacts]);
-
-  // Apply filters for leads
-  useEffect(() => {
-    let filtered = affiliateLeads.filter(lead => {
-      const matchName = (lead.name || '').toLowerCase().includes(leadFilters.name.toLowerCase());
-      const matchEmail = (lead.email || '').toLowerCase().includes(leadFilters.email.toLowerCase());
-      const matchPhone = (lead.phone || '').includes(leadFilters.phone);
-      const matchOrg = (lead.organization || '').toLowerCase().includes(leadFilters.organization.toLowerCase());
-      
-      let matchDate = true;
-      if (leadFilters.startDate) {
-        const submittedDate = new Date(lead.submittedAt);
-        matchDate = submittedDate >= new Date(leadFilters.startDate);
-      }
-      if (matchDate && leadFilters.endDate) {
-        const submittedDate = new Date(lead.submittedAt);
-        const endDate = new Date(leadFilters.endDate);
-        endDate.setHours(23, 59, 59, 999);
-        matchDate = submittedDate <= endDate;
-      }
-      
-      return matchName && matchEmail && matchPhone && matchOrg && matchDate;
-    });
-    setFilteredLeads(filtered);
-  }, [leadFilters, affiliateLeads]);
-
-  const formatDate = (dateString) => {
-    try {
-      const date = parseISO(dateString);
-      return format(date, 'dd MMMM yyyy HH:mm');
-    } catch {
-      return dateString;
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const preset = dateRangePresets.find(p => p.key === dateRange);
+    if (!preset || !preset.days) {
+      const allDates = [...contacts, ...affiliateLeads].map(i => new Date(i.submittedAt));
+      const earliest = allDates.length > 0 ? new Date(Math.min(...allDates)) : subDays(end, 30);
+      return { startDate: startOfDay(earliest), endDate: end };
     }
-  };
+    return { startDate: startOfDay(subDays(end, preset.days)), endDate: end };
+  }, [dateRange, contacts, affiliateLeads]);
 
-  // Export to Excel - Contacts
-  const exportContactsToExcel = () => {
-    const dataToExport = filteredContacts.map(contact => ({
-      'Tanggal': formatDate(contact.submittedAt),
-      'Nama': contact.name,
-      'Email': contact.email,
-      'Telepon': contact.phone,
-      'Organisasi': contact.organization || '-',
-      'Pesan': contact.message
-    }));
+  const allItems = useMemo(() => [
+    ...contacts.map(c => ({ ...c, _type: 'contact' })),
+    ...affiliateLeads.map(l => ({ ...l, _type: 'affiliate' }))
+  ], [contacts, affiliateLeads]);
 
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Contact Form');
-    
-    const fileName = `Contact_Form_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-  };
+  const chartData = useMemo(() => groupByPeriod(allItems, period, startDate, endDate), [allItems, period, startDate, endDate]);
 
-  // Export to Excel - Affiliate Leads
-  const exportLeadsToExcel = () => {
-    const dataToExport = filteredLeads.map(lead => ({
-      'Tanggal': formatDate(lead.submittedAt),
-      'Nama': lead.name,
-      'Email': lead.email,
-      'WhatsApp': lead.phone,
-      'Organisasi/Bisnis': lead.organization,
-      'Monthly Ad Spend': lead.monthly_ad_spend,
-      'Pesan': lead.message,
-      'Affiliator': lead.affiliator
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Affiliate Leads');
-    
-    const fileName = `Affiliate_Leads_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-  };
-
-  const resetContactFilters = () => {
-    setContactFilters({
-      name: '',
-      email: '',
-      phone: '',
-      organization: '',
-      startDate: '',
-      endDate: ''
+  const affiliatorStats = useMemo(() => {
+    const statsMap = {};
+    affiliateLeads.forEach(lead => {
+      const name = lead.affiliator || 'unknown';
+      if (!statsMap[name]) statsMap[name] = { name, total: 0, latest: null };
+      statsMap[name].total++;
+      const d = new Date(lead.submittedAt);
+      if (!statsMap[name].latest || d > new Date(statsMap[name].latest)) statsMap[name].latest = lead.submittedAt;
     });
-  };
+    return Object.values(statsMap).sort((a, b) => b.total - a.total);
+  }, [affiliateLeads]);
 
-  const resetLeadFilters = () => {
-    setLeadFilters({
-      name: '',
-      email: '',
-      phone: '',
-      organization: '',
-      startDate: '',
-      endDate: ''
-    });
-  };
+  const affiliatorChartData = useMemo(() =>
+    affiliatorStats.map(s => ({ name: s.name, leads: s.total })),
+  [affiliatorStats]);
+
+  const totalLeads = contacts.length + affiliateLeads.length;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="animate-spin mx-auto mb-4 text-cyan-600" size={48} />
-          <p className="text-gray-600">Memuat data...</p>
-        </div>
+        <RefreshCw className="animate-spin mx-auto mb-4 text-cyan-600" size={48} />
       </div>
     );
   }
@@ -206,440 +158,210 @@ export const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600">
-                Total Contacts: <span className="font-semibold text-cyan-600">{contacts.length}</span> | 
-                Total Affiliate Leads: <span className="font-semibold text-blue-600">{affiliateLeads.length}</span>
-              </p>
-            </div>
-            <div className="flex gap-4">
-              <Button
-                data-testid="refresh-btn"
-                onClick={fetchData}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white"
-              >
-                <RefreshCw className="mr-2" size={18} />
-                Refresh
-              </Button>
-              <Button
-                data-testid="home-btn"
-                onClick={() => window.location.href = '/'}
-                variant="outline"
-              >
-                Home
-              </Button>
-              <Button
-                data-testid="logout-btn"
-                onClick={handleLogout}
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50"
-              >
-                <LogOut className="mr-2" size={18} />
-                Logout
-              </Button>
-            </div>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1" data-testid="analytics-page-title">Analytics Dashboard</h1>
+            <p className="text-gray-500">Pantau performa lead dan affiliator</p>
+          </div>
+          <div className="flex gap-3">
+            <Button data-testid="nav-contacts-btn" onClick={() => navigate('/admin/contact')} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+              <Database className="mr-2" size={18} />Database Kontak
+            </Button>
+            <Button data-testid="refresh-btn" onClick={fetchData} variant="outline"><RefreshCw className="mr-2" size={18} />Refresh</Button>
+            <Button data-testid="home-btn" onClick={() => window.location.href = '/'} variant="outline">Home</Button>
+            <Button data-testid="logout-btn" onClick={handleLogout} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+              <LogOut className="mr-2" size={18} />Logout
+            </Button>
           </div>
         </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
+        {error && <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6"><p className="text-red-700">{error}</p></div>}
 
-        {/* Tabs */}
-        <Tabs defaultValue="contacts" className="w-full" data-testid="dashboard-tabs">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="contacts" data-testid="tab-contacts">
-              Contact Form ({filteredContacts.length})
-            </TabsTrigger>
-            <TabsTrigger value="affiliates" data-testid="tab-affiliates">
-              Affiliate Leads ({filteredLeads.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card data-testid="card-total-leads" className="border-l-4 border-cyan-500">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Total Semua Lead</p>
+                <p className="text-4xl font-bold text-gray-900">{totalLeads}</p>
+              </div>
+              <div className="w-14 h-14 bg-cyan-100 rounded-xl flex items-center justify-center">
+                <TrendingUp className="text-cyan-600" size={28} />
+              </div>
+            </CardContent>
+          </Card>
+          <Card data-testid="card-total-contacts" className="border-l-4 border-emerald-500">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Contact Form</p>
+                <p className="text-4xl font-bold text-gray-900">{contacts.length}</p>
+              </div>
+              <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <Users className="text-emerald-600" size={28} />
+              </div>
+            </CardContent>
+          </Card>
+          <Card data-testid="card-total-affiliates" className="border-l-4 border-blue-500">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Affiliate Leads</p>
+                <p className="text-4xl font-bold text-gray-900">{affiliateLeads.length}</p>
+              </div>
+              <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
+                <UserCheck className="text-blue-600" size={28} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Contacts Tab */}
-          <TabsContent value="contacts" data-testid="contacts-tab-content">
-            {/* Filters */}
-            <Card className="mb-6" data-testid="contact-filter-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Filter size={20} />
-                  <span>Filter & Search</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Nama</label>
-                    <Input
-                      data-testid="contact-filter-name"
-                      placeholder="Cari nama..."
-                      value={contactFilters.name}
-                      onChange={(e) => setContactFilters({...contactFilters, name: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Email</label>
-                    <Input
-                      data-testid="contact-filter-email"
-                      placeholder="Cari email..."
-                      value={contactFilters.email}
-                      onChange={(e) => setContactFilters({...contactFilters, email: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Telepon</label>
-                    <Input
-                      data-testid="contact-filter-phone"
-                      placeholder="Cari nomor..."
-                      value={contactFilters.phone}
-                      onChange={(e) => setContactFilters({...contactFilters, phone: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Organisasi</label>
-                    <Input
-                      data-testid="contact-filter-org"
-                      placeholder="Cari organisasi..."
-                      value={contactFilters.organization}
-                      onChange={(e) => setContactFilters({...contactFilters, organization: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Dari Tanggal</label>
-                    <Input
-                      data-testid="contact-filter-start-date"
-                      type="date"
-                      value={contactFilters.startDate}
-                      onChange={(e) => setContactFilters({...contactFilters, startDate: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Sampai Tanggal</label>
-                    <Input
-                      data-testid="contact-filter-end-date"
-                      type="date"
-                      value={contactFilters.endDate}
-                      onChange={(e) => setContactFilters({...contactFilters, endDate: e.target.value})}
-                    />
-                  </div>
+        {/* Lead Trend Chart */}
+        <Card className="mb-8" data-testid="lead-trend-card">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp size={22} className="text-cyan-600" />
+                Tren Jumlah Lead
+              </CardTitle>
+              <div className="flex flex-wrap gap-2">
+                {/* Date range presets */}
+                <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                  {dateRangePresets.map(preset => (
+                    <button
+                      key={preset.key}
+                      data-testid={`date-range-${preset.key}`}
+                      onClick={() => setDateRange(preset.key)}
+                      className={`px-3 py-1.5 text-sm rounded-md transition-all font-medium ${
+                        dateRange === preset.key
+                          ? 'bg-white text-cyan-700 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
-                <div className="flex gap-3">
-                  <Button data-testid="reset-contact-filter-btn" onClick={resetContactFilters} variant="outline" size="sm">
-                    Reset Filter
-                  </Button>
-                  <Button data-testid="export-contacts-btn" onClick={exportContactsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
-                    <Download className="mr-2" size={16} />
-                    Export to Excel ({filteredContacts.length} data)
-                  </Button>
+                {/* Period selector */}
+                <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                  {periodOptions.map(opt => (
+                    <button
+                      key={opt.key}
+                      data-testid={`period-${opt.key}`}
+                      onClick={() => setPeriod(opt.key)}
+                      className={`px-3 py-1.5 text-sm rounded-md transition-all font-medium ${
+                        period === opt.key
+                          ? 'bg-cyan-500 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px]" data-testid="lead-trend-chart">
+              {chartData.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-400">Tidak ada data untuk periode ini</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                      formatter={(value, name) => [value, name === 'contacts' ? 'Contact Form' : 'Affiliate']}
+                    />
+                    <Legend formatter={(value) => value === 'contacts' ? 'Contact Form' : 'Affiliate'} />
+                    <Bar dataKey="contacts" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="affiliates" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Contacts List */}
-            {filteredContacts.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <MessageSquare className="mx-auto mb-4 text-gray-400" size={64} />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Tidak Ada Data
-                  </h3>
-                  <p className="text-gray-600">
-                    {contacts.length === 0 ? 'Belum ada submission' : 'Tidak ada data yang sesuai dengan filter'}
-                  </p>
-                </CardContent>
-              </Card>
+        {/* Affiliator Performance */}
+        <Card data-testid="affiliator-performance-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCheck size={22} className="text-blue-600" />
+              Capaian Affiliator
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {affiliatorStats.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <UserCheck className="mx-auto mb-3" size={48} />
+                <p>Belum ada data affiliator</p>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6" data-testid="contacts-list">
-                {filteredContacts.map((contact) => (
-                  <Card key={contact.id} data-testid={`contact-card-${contact.id}`} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50">
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center">
-                            <User className="text-white" size={24} />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">
-                              {contact.name}
-                            </h3>
-                            {contact.organization && (
-                              <p className="text-sm text-gray-600">{contact.organization}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="mr-2" size={16} />
-                          {formatDate(contact.submittedAt)}
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div className="flex items-start space-x-3">
-                          <Mail className="text-cyan-600 flex-shrink-0 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Email</p>
-                            <a 
-                              href={`mailto:${contact.email}`}
-                              className="text-gray-900 font-medium hover:text-cyan-600"
-                            >
-                              {contact.email}
-                            </a>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <Phone className="text-cyan-600 flex-shrink-0 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Telepon</p>
-                            <a 
-                              href={`tel:${contact.phone}`}
-                              className="text-gray-900 font-medium hover:text-cyan-600"
-                            >
-                              {contact.phone}
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t pt-4">
-                        <div className="flex items-start space-x-3">
-                          <MessageSquare className="text-cyan-600 flex-shrink-0 mt-1" size={20} />
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-500 mb-2">Pesan</p>
-                            <p className="text-gray-900 whitespace-pre-wrap">{contact.message}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t mt-4 pt-4 flex gap-3">
-                        <Button
-                          data-testid={`contact-whatsapp-${contact.id}`}
-                          onClick={() => window.open(`https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`, '_blank')}
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                          size="sm"
-                        >
-                          WhatsApp
-                        </Button>
-                        <Button
-                          data-testid={`contact-email-${contact.id}`}
-                          onClick={() => window.location.href = `mailto:${contact.email}`}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Email
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Bar Chart */}
+                <div className="h-[300px]" data-testid="affiliator-chart">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={affiliatorChartData} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fontWeight: 600 }} width={100} />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                      <Bar dataKey="leads" radius={[0, 6, 6, 0]}>
+                        {affiliatorChartData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Stats Table */}
+                <div data-testid="affiliator-table">
+                  <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Affiliator</th>
+                          <th className="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Lead</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Lead Terbaru</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {affiliatorStats.map((stat, i) => (
+                          <tr key={stat.name} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-5 py-3.5">
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold`}
+                                style={{ backgroundColor: COLORS[i % COLORS.length] }}>
+                                {i + 1}
+                              </div>
+                            </td>
+                            <td className="px-5 py-3.5 font-semibold text-gray-900 capitalize">{stat.name}</td>
+                            <td className="px-5 py-3.5 text-center">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
+                                {stat.total}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5 text-sm text-gray-500">
+                              {stat.latest ? (() => {
+                                try { return format(parseISO(stat.latest), 'dd MMM yyyy HH:mm', { locale: idLocale }); }
+                                catch { return stat.latest; }
+                              })() : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
-          </TabsContent>
-
-          {/* Affiliate Leads Tab */}
-          <TabsContent value="affiliates" data-testid="leads-tab-content">
-            {/* Filters */}
-            <Card className="mb-6" data-testid="lead-filter-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Filter size={20} />
-                  <span>Filter & Search</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Nama</label>
-                    <Input
-                      data-testid="lead-filter-name"
-                      placeholder="Cari nama..."
-                      value={leadFilters.name}
-                      onChange={(e) => setLeadFilters({...leadFilters, name: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Email</label>
-                    <Input
-                      data-testid="lead-filter-email"
-                      placeholder="Cari email..."
-                      value={leadFilters.email}
-                      onChange={(e) => setLeadFilters({...leadFilters, email: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">WhatsApp</label>
-                    <Input
-                      data-testid="lead-filter-phone"
-                      placeholder="Cari nomor..."
-                      value={leadFilters.phone}
-                      onChange={(e) => setLeadFilters({...leadFilters, phone: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Bisnis/Perusahaan</label>
-                    <Input
-                      data-testid="lead-filter-org"
-                      placeholder="Cari bisnis..."
-                      value={leadFilters.organization}
-                      onChange={(e) => setLeadFilters({...leadFilters, organization: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Dari Tanggal</label>
-                    <Input
-                      data-testid="lead-filter-start-date"
-                      type="date"
-                      value={leadFilters.startDate}
-                      onChange={(e) => setLeadFilters({...leadFilters, startDate: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">Sampai Tanggal</label>
-                    <Input
-                      data-testid="lead-filter-end-date"
-                      type="date"
-                      value={leadFilters.endDate}
-                      onChange={(e) => setLeadFilters({...leadFilters, endDate: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Button data-testid="reset-lead-filter-btn" onClick={resetLeadFilters} variant="outline" size="sm">
-                    Reset Filter
-                  </Button>
-                  <Button data-testid="export-leads-btn" onClick={exportLeadsToExcel} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
-                    <Download className="mr-2" size={16} />
-                    Export to Excel ({filteredLeads.length} data)
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Leads List */}
-            {filteredLeads.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <UserCheck className="mx-auto mb-4 text-gray-400" size={64} />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Tidak Ada Data
-                  </h3>
-                  <p className="text-gray-600">
-                    {affiliateLeads.length === 0 ? 'Belum ada affiliate lead' : 'Tidak ada data yang sesuai dengan filter'}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-6" data-testid="leads-list">
-                {filteredLeads.map((lead) => (
-                  <Card key={lead.id} data-testid={`lead-card-${lead.id}`} className="hover:shadow-lg transition-shadow border-l-4 border-blue-500">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                            <User className="text-white" size={24} />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">
-                              {lead.name}
-                            </h3>
-                            <p className="text-sm text-gray-600">{lead.organization}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar className="mr-2" size={16} />
-                            {formatDate(lead.submittedAt)}
-                          </div>
-                          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                            <UserCheck className="inline mr-1" size={14} />
-                            Affiliator: {lead.affiliator}
-                          </div>
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div className="flex items-start space-x-3">
-                          <Building className="text-blue-600 flex-shrink-0 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Organisasi</p>
-                            <p className="text-gray-900 font-medium">{lead.organization}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <DollarSign className="text-blue-600 flex-shrink-0 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Monthly Ad Spend</p>
-                            <p className="text-gray-900 font-medium">{lead.monthly_ad_spend}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <Mail className="text-blue-600 flex-shrink-0 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Email</p>
-                            <a 
-                              href={`mailto:${lead.email}`}
-                              className="text-gray-900 font-medium hover:text-blue-600"
-                            >
-                              {lead.email}
-                            </a>
-                          </div>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <Phone className="text-blue-600 flex-shrink-0 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">WhatsApp</p>
-                            <a 
-                              href={`tel:${lead.phone}`}
-                              className="text-gray-900 font-medium hover:text-blue-600"
-                            >
-                              {lead.phone}
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t pt-4">
-                        <div className="flex items-start space-x-3">
-                          <MessageSquare className="text-blue-600 flex-shrink-0 mt-1" size={20} />
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-500 mb-2">Pesan/Kebutuhan</p>
-                            <p className="text-gray-900 whitespace-pre-wrap">{lead.message}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t mt-4 pt-4 flex gap-3">
-                        <Button
-                          data-testid={`lead-whatsapp-${lead.id}`}
-                          onClick={() => window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`, '_blank')}
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                          size="sm"
-                        >
-                          WhatsApp
-                        </Button>
-                        <Button
-                          data-testid={`lead-email-${lead.id}`}
-                          onClick={() => window.location.href = `mailto:${lead.email}`}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Email
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          </CardContent>
+        </Card>
 
       </div>
     </div>

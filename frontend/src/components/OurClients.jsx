@@ -22,6 +22,10 @@ export const OurClients = () => {
     {
       name: 'Client 5',
       logo: 'https://customer-assets.emergentagent.com/job_digiads-pro/artifacts/5xs4n8s2_6.svg'
+    },
+    {
+      name: 'Qudwah Indonesia',
+      logo: 'https://customer-assets.emergentagent.com/job_12284c23-0503-48a3-8e90-f4abf57ceca5/artifacts/416wla3q_image.png'
     }
   ];
 

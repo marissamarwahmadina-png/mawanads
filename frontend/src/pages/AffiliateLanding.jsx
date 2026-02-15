@@ -166,48 +166,9 @@ export const AffiliateLanding = () => {
       </div>
 
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-5xl mx-auto">
-          
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Scale Up Campaign Digital Anda Bersama <span className="text-cyan-600">Mawana Digital Services</span>
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Partner strategis untuk NGO, fundraising, dan brand yang ingin bertumbuh melalui iklan digital yang aman, terukur, dan profitable.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* Benefits */}
-            <div>
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Kenapa Memilih Kami?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
-                    {benefits.map((benefit, index) => (
-                      <li key={index} className="flex items-start space-x-3">
-                        <CheckCircle2 className="text-cyan-600 flex-shrink-0 mt-1" size={20} />
-                        <span className="text-gray-700">{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-8 p-6 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl">
-                    <h3 className="font-bold text-gray-900 mb-3">Trusted By:</h3>
-                    <p className="text-gray-700">
-                      NGO, yayasan, dan brand terkemuka di Indonesia yang telah mempercayakan campaign digital mereka kepada kami.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        <div className="max-w-xl mx-auto">
 
             {/* Form */}
-            <div>
               <Card className="shadow-xl border-2 border-cyan-100">
                 <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50">
                   <CardTitle className="text-2xl">Dapatkan Konsultasi Gratis</CardTitle>

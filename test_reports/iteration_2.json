@@ -1,0 +1,78 @@
+{
+  "summary": "Tested NEW changes: 1) Affiliate landing page layout change - hero/benefits removed, form-only layout. 2) Resend email notification integration for contact and affiliate-lead endpoints. All tests passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/test_reports/pytest/pytest_results_iteration2.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% (all tested features working)"
+  },
+  "test_credentials": {
+    "admin_password": "mawana2025admin",
+    "login_url": "/admin/login",
+    "dashboard_url": "/admin/dashboard"
+  },
+  "seed_data_creation": "Created test contacts and affiliate leads during testing (prefixed with TEST_)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All new features verified: 1) Affiliate page /affiliate/dimas shows ONLY form (no hero heading, no 'Kenapa Memilih Kami' section) - verified. 2) Resend email notification working for both /api/contact and /api/affiliate-lead - verified via backend logs showing 'Notification email sent to marissamarwahmadina@gmail.com'. Admin dashboard working with 8 contacts and 3 affiliate leads displayed.",
+  "tests_performed": {
+    "affiliate_page_layout": [
+      "✓ Header bar with gradient and logo present",
+      "✓ Hero heading correctly REMOVED",
+      "✓ Benefits section ('Kenapa Memilih Kami?') correctly REMOVED",
+      "✓ Form card with 'Dapatkan Konsultasi Gratis' title displayed directly",
+      "✓ All form fields present (name, email, phone, organization, ad_spend dropdown, message)"
+    ],
+    "affiliate_form_submission": [
+      "✓ Form filled with test data",
+      "✓ Submit button clicked",
+      "✓ Success state 'Pendaftaran Berhasil!' displayed",
+      "✓ WhatsApp and Home buttons present on success",
+      "✓ Toast notification 'Terima kasih!' shown"
+    ],
+    "email_notification": [
+      "✓ POST /api/contact triggers email - backend log: 'New contact submission from email_test@example.com'",
+      "✓ Backend log confirms: 'Notification email sent to marissamarwahmadina@gmail.com'",
+      "✓ POST /api/affiliate-lead triggers email - backend log: 'New affiliate lead from dimas: TEST_Affiliate_29636de5'",
+      "✓ Backend log confirms: 'Notification email sent to marissamarwahmadina@gmail.com'"
+    ],
+    "admin_dashboard": [
+      "✓ Login with 'mawana2025admin' successful",
+      "✓ Dashboard shows Total Contacts: 8, Total Affiliate Leads: 3",
+      "✓ Contact Form tab with data displayed",
+      "✓ Affiliate Leads tab accessible",
+      "✓ Filters (name, email, phone, organization, date range) present",
+      "✓ Export to Excel button present",
+      "✓ Refresh, Home, Logout buttons working"
+    ],
+    "main_landing_page": [
+      "✓ Page loads correctly",
+      "✓ Header logo present",
+      "✓ Hero section visible with CTA buttons",
+      "✓ Contact form present",
+      "✓ Footer present"
+    ],
+    "backend_api": [
+      "✓ 13/13 pytest tests passed",
+      "✓ Health check endpoint working",
+      "✓ Admin login/auth working",
+      "✓ Contact CRUD working",
+      "✓ Affiliate lead CRUD working",
+      "✓ Validation rules working"
+    ]
+  }
+}

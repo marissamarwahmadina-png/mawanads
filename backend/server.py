@@ -282,6 +282,37 @@ async def create_affiliate_lead(lead_data: AffiliateLeadCreate):
         
         if result.inserted_id:
             logger.info(f"New affiliate lead from {lead_obj.affiliator}: {lead_obj.name}")
+            
+            # Send admin notification email
+            asyncio.create_task(send_admin_notification(
+                subject=f"Affiliate Lead Baru dari {lead_obj.affiliator}: {lead_obj.name}",
+                html_content=f"""
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(to right, #3b82f6, #8b5cf6); padding: 20px; text-align: center;">
+                        <h1 style="color: white; margin: 0;">Affiliate Lead Baru</h1>
+                    </div>
+                    <div style="padding: 24px; background: #f9fafb;">
+                        <div style="background: #eff6ff; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <strong>Affiliator:</strong> {lead_obj.affiliator}
+                        </div>
+                        <h2 style="color: #111827;">Detail Lead:</h2>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px; font-weight: bold; color: #6b7280;">Nama</td><td style="padding: 8px;">{lead_obj.name}</td></tr>
+                            <tr style="background: #f3f4f6;"><td style="padding: 8px; font-weight: bold; color: #6b7280;">Email</td><td style="padding: 8px;">{lead_obj.email}</td></tr>
+                            <tr><td style="padding: 8px; font-weight: bold; color: #6b7280;">WhatsApp</td><td style="padding: 8px;">{lead_obj.phone}</td></tr>
+                            <tr style="background: #f3f4f6;"><td style="padding: 8px; font-weight: bold; color: #6b7280;">Organisasi</td><td style="padding: 8px;">{lead_obj.organization}</td></tr>
+                            <tr><td style="padding: 8px; font-weight: bold; color: #6b7280;">Ad Spend/Bulan</td><td style="padding: 8px;">{lead_obj.monthly_ad_spend}</td></tr>
+                            <tr style="background: #f3f4f6;"><td style="padding: 8px; font-weight: bold; color: #6b7280;">Pesan</td><td style="padding: 8px;">{lead_obj.message}</td></tr>
+                        </table>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <a href="https://wa.me/{lead_obj.phone.replace(' ', '').replace('-', '')}" style="display: inline-block; padding: 12px 24px; background: #22c55e; color: white; text-decoration: none; border-radius: 8px; margin-right: 8px;">WhatsApp</a>
+                            <a href="mailto:{lead_obj.email}" style="display: inline-block; padding: 12px 24px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px;">Email</a>
+                        </div>
+                    </div>
+                </div>
+                """
+            ))
+            
             return {
                 "success": True,
                 "data": lead_obj.model_dump()

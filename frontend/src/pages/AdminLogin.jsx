@@ -75,6 +75,7 @@ export const AdminLogin = () => {
                 <div className="relative">
                   <Input
                     id="password"
+                    data-testid="admin-password-input"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -95,6 +96,7 @@ export const AdminLogin = () => {
 
               <Button
                 type="submit"
+                data-testid="admin-login-btn"
                 disabled={loading || !password}
                 className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                 size="lg"

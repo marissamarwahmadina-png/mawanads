@@ -45,14 +45,6 @@ export const AffiliateLanding = () => {
     'Di atas Rp 100 juta'
   ];
 
-  const benefits = [
-    'Konsultasi strategi digital marketing gratis',
-    'Akun whitelist Meta untuk campaign lebih stabil',
-    'Tim expert yang berpengalaman dengan NGO & fundraising',
-    'ROI terukur dengan reporting yang transparan',
-    'Dukungan teknis prioritas'
-  ];
-
   const handleChange = (e) => {
     setFormData({
       ...formData,

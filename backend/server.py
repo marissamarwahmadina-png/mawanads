@@ -31,6 +31,28 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Resend configuration
+resend.api_key = os.environ.get('RESEND_API_KEY', '')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_NOTIFICATION_EMAIL', '')
+
+async def send_admin_notification(subject: str, html_content: str):
+    """Send email notification to admin (non-blocking)"""
+    if not ADMIN_NOTIFICATION_EMAIL or not resend.api_key:
+        logger.warning("Email notification skipped: missing config")
+        return
+    try:
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [ADMIN_NOTIFICATION_EMAIL],
+            "subject": subject,
+            "html": html_content
+        }
+        await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Notification email sent to {ADMIN_NOTIFICATION_EMAIL}")
+    except Exception as e:
+        logger.error(f"Failed to send notification email: {str(e)}")
+
 # Create the main app without a prefix
 app = FastAPI(redirect_slashes=False)
 

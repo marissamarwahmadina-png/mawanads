@@ -1,69 +1,52 @@
 # Mawana Digital Services - PRD
 
 ## Problem Statement
-Landing page profesional untuk brand "Mawana Digital Services" dengan fitur admin dashboard untuk manajemen leads dan analytics.
+Landing page profesional untuk brand "Mawana Digital Services" dengan fitur admin dashboard, affiliate marketing system, dan analytics.
 
 ## Core Features (Completed)
 - Multi-section landing page (Hero, Services, Whitelist, Clients, Testimonials, Contact)
+- Client carousel marquee dengan 6 logo (termasuk Qudwah Indonesia)
 - Floating WhatsApp button
-- Affiliate marketing system (/affiliate/:name) dengan Meta Pixel tracking
-- Affiliate page: form-only layout (tanpa hero section & benefits)
+- **Affiliate Marketing System:**
+  - `/affiliate/dimas` (Pixel: 2975682082624536)
+  - `/affiliate/aansopiyan` (Pixel: 4419483654961528)
+  - Dark-themed persuasive landing page "Konsultasi Ads Gratis Khusus High Spender"
+  - Smooth scroll CTA ke form
 - **Analytics Dashboard** (/admin/dashboard):
   - Summary cards (Total Lead, Contact Form, Affiliate Leads)
   - Lead trend chart (Harian/Mingguan/Bulanan/Tahunan)
   - Date range filter (7 Hari, 30 Hari, 3 Bulan, 1 Tahun, Semua)
   - Affiliator performance (bar chart + ranking table)
 - **Database Kontak** (/admin/contact):
-  - Contact form & Affiliate lead management (tabs)
-  - Search filters (nama, email, telepon, organisasi)
-  - Date range filter
-  - Export to Excel
-  - Quick-action buttons (WhatsApp, Email) per lead
+  - Contact/Affiliate lead management tabs
+  - Search filters, date range filter, Export to Excel
+  - Quick-action buttons (WhatsApp, Email)
 - JWT authentication for admin pages
-- Email notifikasi otomatis ke admin via Resend saat ada lead baru
-- Navigation between Analytics <-> Database Kontak
+- Email notifikasi otomatis via Resend ke marissamarwahmadina@gmail.com
 
 ## Tech Stack
-- Frontend: React, Tailwind CSS, Shadcn UI, react-router-dom, axios, xlsx, date-fns, recharts
-- Backend: FastAPI, Pydantic, Motor (async MongoDB), Resend (email)
-- Auth: JWT (password: env ADMIN_PASSWORD)
-- DB: MongoDB (contacts, affiliate_leads collections)
-- Email: Resend API (sender: onboarding@resend.dev, admin: marissamarwahmadina@gmail.com)
-
-## Architecture
-```
-/app/backend/server.py - All API routes + Resend email
-/app/frontend/src/pages/AdminDashboard.jsx - Analytics dashboard (charts)
-/app/frontend/src/pages/AdminContacts.jsx - Database kontak (management)
-/app/frontend/src/pages/AdminLogin.jsx - Login page
-/app/frontend/src/pages/Home.jsx - Landing page
-/app/frontend/src/pages/AffiliateLanding.jsx - Affiliate page (form only)
-/app/frontend/src/context/AuthContext.jsx - Auth state
-/app/frontend/src/App.js - Routes
-```
+- Frontend: React, Tailwind CSS, Shadcn UI, recharts, date-fns, xlsx
+- Backend: FastAPI, Motor (MongoDB), Resend (email)
+- Auth: JWT
+- DB: MongoDB (contacts, affiliate_leads)
 
 ## Routes
 - / - Landing page
 - /admin/login - Admin login
-- /admin/dashboard - Analytics dashboard (protected)
+- /admin/dashboard - Analytics (protected)
 - /admin/contact - Database kontak (protected)
 - /affiliate/:affiliator - Affiliate landing page
 
 ## API Endpoints
-- POST /api/admin/login - Admin authentication
-- GET /api/contacts - List contacts
-- POST /api/contact - Submit contact form + email notification
-- GET /api/affiliate-leads - List affiliate leads
-- POST /api/affiliate-lead - Submit affiliate lead + email notification
-- GET /api/health - Health check
+- POST /api/admin/login
+- GET /api/contacts, POST /api/contact
+- GET /api/affiliate-leads, POST /api/affiliate-lead
+- GET /api/health
 
 ## 3rd Party Integrations
-- Meta Pixel: ID 2975682082624536 (affiliate tracking)
-- Resend: Email notifications to admin (marissamarwahmadina@gmail.com)
+- Meta Pixel: dimas (2975682082624536), aansopiyan (4419483654961528)
+- Resend: Email notifications
 
 ## Status
-- All features implemented and tested (iteration 1-3: 100% pass)
+- All features implemented and tested (iteration 1-4: 100% pass)
 - No pending bugs or tasks
-
-## Backlog
-- No pending tasks

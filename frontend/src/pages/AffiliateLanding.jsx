@@ -299,9 +299,7 @@ export const AffiliateLanding = () => {
                   </form>
                 </CardContent>
               </Card>
-            </div>
 
-          </div>
         </div>
       </div>
     </div>

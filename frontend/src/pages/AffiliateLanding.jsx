@@ -1,12 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import MetaPixel, { trackLead, trackSubmitApplication, trackPurchase } from '../components/MetaPixel';
@@ -21,7 +20,6 @@ const AFFILIATOR_PIXELS = {
 
 export const AffiliateLanding = () => {
   const { affiliator } = useParams();
-  const navigate = useNavigate();
   const formRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -31,15 +29,6 @@ export const AffiliateLanding = () => {
   const [isSuccess, setIsSuccess] = useState(false);
 
   const pixelId = AFFILIATOR_PIXELS[affiliator?.toLowerCase()] || AFFILIATOR_PIXELS['default'];
-
-  const spendOptions = [
-    'Di bawah Rp 5 juta',
-    'Rp 5 juta - Rp 10 juta',
-    'Rp 10 juta - Rp 25 juta',
-    'Rp 25 juta - Rp 50 juta',
-    'Rp 50 juta - Rp 100 juta',
-    'Di atas Rp 100 juta'
-  ];
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

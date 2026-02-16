@@ -34,10 +34,6 @@ export const AffiliateLanding = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSelectChange = (value) => {
-    setFormData({ ...formData, monthly_ad_spend: value });
-  };
-
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };

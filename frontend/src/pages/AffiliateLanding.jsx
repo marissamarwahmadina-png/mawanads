@@ -74,7 +74,7 @@ export const AffiliateLanding = () => {
               Terima kasih atas minat Anda. Saya akan menghubungi Anda dalam 1x24 jam untuk sesi konsultasi gratis.
             </p>
             <div className="space-y-4">
-              <Button onClick={() => window.open('https://wa.me/6289655128024', '_blank')} className="bg-green-500 hover:bg-green-600 text-white" size="lg">
+              <Button onClick={() => window.open('https://wa.me/6287784094475', '_blank')} className="bg-green-500 hover:bg-green-600 text-white" size="lg">
                 Chat WhatsApp Sekarang
               </Button>
             </div>
@@ -229,7 +229,7 @@ export const AffiliateLanding = () => {
                     <Label htmlFor="monthly_ad_spend" className="flex items-center space-x-2 text-slate-700">
                       <DollarSign size={15} /><span>Jumlah Spent Ads Per Bulan *</span>
                     </Label>
-                    <Input id="monthly_ad_spend" name="monthly_ad_spend" value={formData.monthly_ad_spend} onChange={handleChange} required placeholder="Contoh: Rp 50 juta" className="mt-2" data-testid="input-spend" />
+                    <Input id="monthly_ad_spend" name="monthly_ad_spend" value={formData.monthly_ad_spend} onChange={handleChange} required placeholder="Contoh: Rp 500 juta" className="mt-2" data-testid="input-spend" />
                   </div>
                   <div>
                     <Label htmlFor="message" className="flex items-center space-x-2 text-slate-700">

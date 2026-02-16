@@ -67,4 +67,8 @@ export const trackSubmitApplication = () => {
   trackMetaEvent('SubmitApplication');
 };
 
+export const trackPurchase = (value = 0, currency = 'IDR') => {
+  trackMetaEvent('Purchase', { value, currency });
+};
+
 export default MetaPixel;

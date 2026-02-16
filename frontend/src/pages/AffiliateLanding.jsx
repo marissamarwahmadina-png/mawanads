@@ -9,7 +9,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
-import MetaPixel, { trackLead, trackSubmitApplication } from '../components/MetaPixel';
+import MetaPixel, { trackLead, trackSubmitApplication, trackPurchase } from '../components/MetaPixel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -62,6 +62,7 @@ export const AffiliateLanding = () => {
       if (response.data.success) {
         trackLead();
         trackSubmitApplication();
+        trackPurchase();
         setIsSuccess(true);
         toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
         setFormData({ name: '', email: '', phone: '', organization: '', monthly_ad_spend: '', message: '' });
@@ -91,9 +92,6 @@ export const AffiliateLanding = () => {
               <Button onClick={() => window.open('https://wa.me/6289655128024', '_blank')} className="bg-green-500 hover:bg-green-600 text-white" size="lg">
                 Chat WhatsApp Sekarang
               </Button>
-              <div>
-                <Button onClick={() => navigate('/')} variant="outline">Kembali ke Home</Button>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -246,16 +244,7 @@ export const AffiliateLanding = () => {
                     <Label htmlFor="monthly_ad_spend" className="flex items-center space-x-2 text-slate-700">
                       <DollarSign size={15} /><span>Jumlah Spent Ads Per Bulan *</span>
                     </Label>
-                    <Select onValueChange={handleSelectChange} value={formData.monthly_ad_spend}>
-                      <SelectTrigger className="mt-2" data-testid="input-spend">
-                        <SelectValue placeholder="Pilih range budget iklan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {spendOptions.map((option, index) => (
-                          <SelectItem key={index} value={option}>{option}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input id="monthly_ad_spend" name="monthly_ad_spend" value={formData.monthly_ad_spend} onChange={handleChange} required placeholder="Contoh: Rp 50 juta" className="mt-2" data-testid="input-spend" />
                   </div>
                   <div>
                     <Label htmlFor="message" className="flex items-center space-x-2 text-slate-700">

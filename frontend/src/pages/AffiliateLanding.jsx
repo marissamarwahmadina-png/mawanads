@@ -40,6 +40,7 @@ export const AffiliateLanding = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    trackPurchase();
     setIsSubmitting(true);
     try {
       const submitData = { ...formData, affiliator: affiliator || 'direct' };
@@ -47,7 +48,6 @@ export const AffiliateLanding = () => {
       if (response.data.success) {
         trackLead();
         trackSubmitApplication();
-        trackPurchase();
         setIsSuccess(true);
         toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
         setFormData({ name: '', email: '', phone: '', organization: '', monthly_ad_spend: '', message: '' });

@@ -8,7 +8,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
-import MetaPixel, { trackLead, trackSubmitApplication, trackPurchase } from '../components/MetaPixel';
+import MetaPixel, { trackSubmitApplication, trackPurchase } from '../components/MetaPixel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -46,7 +46,6 @@ export const AffiliateLanding = () => {
       const submitData = { ...formData, affiliator: affiliator || 'direct' };
       const response = await axios.post(`${BACKEND_URL}/api/affiliate-lead`, submitData);
       if (response.data.success) {
-        trackLead();
         trackSubmitApplication();
         setIsSuccess(true);
         toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });

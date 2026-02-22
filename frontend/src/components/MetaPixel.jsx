@@ -26,7 +26,6 @@ export const MetaPixel = ({ pixelId }) => {
 
     window.fbq('init', pixelId);
     window.fbq('track', 'PageView');
-    window.fbq('track', 'Lead');
 
     // Cleanup
     return () => {

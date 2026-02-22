@@ -59,29 +59,6 @@ export const AffiliateLanding = () => {
     }
   };
 
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full shadow-2xl border-0 bg-white/95 backdrop-blur">
-          <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-              <CheckCircle2 className="text-white" size={48} />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Pendaftaran Berhasil!</h2>
-            <p className="text-lg text-gray-600 mb-8">
-              Terima kasih atas minat Anda. Saya akan menghubungi Anda dalam 1x24 jam untuk sesi konsultasi gratis.
-            </p>
-            <div className="space-y-4">
-              <Button onClick={() => window.open('https://wa.me/6287784094475', '_blank')} className="bg-green-500 hover:bg-green-600 text-white" size="lg">
-                Chat WhatsApp Sekarang
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-900">
       <MetaPixel pixelId={pixelId} />

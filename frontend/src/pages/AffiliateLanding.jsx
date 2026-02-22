@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
-import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown } from 'lucide-react';
+import { Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import MetaPixel, { trackMetaEvent } from '../components/MetaPixel';
 

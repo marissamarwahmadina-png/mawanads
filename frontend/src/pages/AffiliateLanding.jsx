@@ -27,7 +27,6 @@ export const AffiliateLanding = () => {
     name: '', email: '', phone: '', organization: '', monthly_ad_spend: '', message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const pixelId = AFFILIATOR_PIXELS[affiliator?.toLowerCase()] || AFFILIATOR_PIXELS['default'];
 
@@ -39,6 +38,10 @@ export const AffiliateLanding = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  useEffect(() => {
+    trackMetaEvent('Lead');
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -46,11 +49,8 @@ export const AffiliateLanding = () => {
       const submitData = { ...formData, affiliator: affiliator || 'direct' };
       const response = await axios.post(`${BACKEND_URL}/api/affiliate-lead`, submitData);
       if (response.data.success) {
-        trackPurchase();
-        setIsSuccess(true);
         toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
-        setFormData({ name: '', email: '', phone: '', organization: '', monthly_ad_spend: '', message: '' });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        navigate(`/affiliate/${affiliator}/thankyou`);
       }
     } catch (error) {
       toast.error('Gagal mengirim', { description: error.response?.data?.detail || 'Silakan coba lagi.' });

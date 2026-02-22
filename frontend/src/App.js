@@ -6,6 +6,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminContacts from "./pages/AdminContacts";
 import AffiliateLanding from "./pages/AffiliateLanding";
+import AffiliateThankYou from "./pages/AffiliateThankYou";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -36,6 +37,7 @@ function App() {
               }
             />
             <Route path="/affiliate/:affiliator" element={<AffiliateLanding />} />
+            <Route path="/affiliate/:affiliator/thankyou" element={<AffiliateThankYou />} />
           </Routes>
         </BrowserRouter>
         <Toaster />

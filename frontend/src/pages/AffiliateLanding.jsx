@@ -61,7 +61,6 @@ export const AffiliateLanding = () => {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <MetaPixel pixelId={pixelId} />
         <Card className="max-w-2xl w-full shadow-2xl border-0 bg-white/95 backdrop-blur">
           <CardContent className="p-12 text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -8,7 +8,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { CheckCircle2, Building, TrendingUp, MessageSquare, User, DollarSign, Mail, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
-import MetaPixel, { trackPurchase } from '../components/MetaPixel';
+import MetaPixel, { trackMetaEvent } from '../components/MetaPixel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -20,6 +20,7 @@ const AFFILIATOR_PIXELS = {
 
 export const AffiliateLanding = () => {
   const { affiliator } = useParams();
+  const navigate = useNavigate();
   const formRef = useRef(null);
 
   const [formData, setFormData] = useState({

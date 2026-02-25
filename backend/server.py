@@ -347,17 +347,6 @@ async def get_affiliate_leads():
         logger.error(f"Error fetching affiliate leads: {str(e)}")
         raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
 
-# TriPay Configuration
-TRIPAY_API_KEY = os.environ.get('TRIPAY_API_KEY', '')
-TRIPAY_PRIVATE_KEY = os.environ.get('TRIPAY_PRIVATE_KEY', '')
-TRIPAY_MERCHANT_CODE = os.environ.get('TRIPAY_MERCHANT_CODE', '')
-TRIPAY_MODE = os.environ.get('TRIPAY_MODE', 'sandbox')
-
-def get_tripay_base_url():
-    if TRIPAY_MODE == 'production':
-        return 'https://tripay.co.id/api'
-    return 'https://tripay.co.id/api-sandbox'
-
 # Webinar Models
 class WebinarEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

@@ -41,7 +41,7 @@ const WebinarPayment = () => {
     if (!selectedMethod || !invoiceId) return;
     setCreating(true);
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/webinar/create-payment?invoice_id=${invoiceId}&method=${selectedMethod}`);
+      const res = await axios.post(`${BACKEND_URL}/api/webinar/create-payment`, { invoice_id: invoiceId, method: selectedMethod });
       if (res.data.success) {
         setRegistrant(prev => ({
           ...prev,

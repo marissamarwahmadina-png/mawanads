@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import {
   Users, CreditCard, TrendingUp, Clock, CheckCircle2, XCircle,
-  ArrowLeft, RefreshCw, Search, Download, Eye, Edit3, ChevronDown,
-  DollarSign, Calendar, AlertTriangle, LogOut, BarChart3, FileText
+  RefreshCw, Search, Download, Edit3,
+  DollarSign, Calendar, LogOut, BarChart3, FileText, Trash2
 } from 'lucide-react';
+import AdminNav from '../components/AdminNav';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 

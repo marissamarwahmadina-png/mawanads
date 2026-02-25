@@ -41,6 +41,18 @@ resend.api_key = os.environ.get('RESEND_API_KEY', '')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_NOTIFICATION_EMAIL', '')
 
+# TriPay configuration
+TRIPAY_API_KEY = os.environ.get('TRIPAY_API_KEY', '')
+TRIPAY_PRIVATE_KEY = os.environ.get('TRIPAY_PRIVATE_KEY', '')
+TRIPAY_MERCHANT_CODE = os.environ.get('TRIPAY_MERCHANT_CODE', '')
+TRIPAY_SANDBOX = os.environ.get('TRIPAY_SANDBOX', 'true').lower() == 'true'
+
+def get_tripay_base_url():
+    """Get TriPay API base URL based on environment"""
+    if TRIPAY_SANDBOX:
+        return "https://tripay.co.id/api-sandbox"
+    return "https://tripay.co.id/api"
+
 async def send_admin_notification(subject: str, html_content: str):
     """Send email notification to admin (non-blocking)"""
     if not ADMIN_NOTIFICATION_EMAIL or not resend.api_key:

@@ -10,9 +10,31 @@ import { toast } from 'sonner';
 import {
   Users, CreditCard, TrendingUp, Clock, CheckCircle2, XCircle,
   RefreshCw, Search, Download, Edit3,
-  DollarSign, Calendar, LogOut, BarChart3, FileText, Trash2
+  DollarSign, Calendar, LogOut, BarChart3, FileText, Trash2, MessageCircle
 } from 'lucide-react';
 import AdminNav from '../components/AdminNav';
+
+function getWaReminders(name, invoice, amount) {
+  const firstName = name.split(' ')[0];
+  const amountStr = `Rp ${(amount || 0).toLocaleString('id-ID')}`;
+  return [
+    {
+      label: '1',
+      title: 'Reminder Friendly',
+      msg: `Halo Kak ${firstName} 👋\n\nTerima kasih sudah mendaftar Webinar *Psikologi Sedekah* 🎉\n\nKami lihat pendaftaran Kakak dengan invoice *${invoice}* (${amountStr}) belum selesai pembayarannya.\n\nJangan sampai ketinggalan ya Kak, karena materinya benar-benar aplikatif untuk meningkatkan konversi donasi campaign Kakak.\n\n📅 11 Maret 2026, 10.00 WIB\n\nKalau ada kendala pembayaran, silakan hubungi kami ya 🙏`
+    },
+    {
+      label: '2',
+      title: 'Reminder Urgensi',
+      msg: `Kak ${firstName}, kursi webinar *Psikologi Sedekah* tinggal terbatas! ⚡\n\nPendaftaran Kakak (invoice *${invoice}*) masih menunggu pembayaran sebesar ${amountStr}.\n\nPeserta lain sudah mulai berdatangan, dan kami tidak ingin Kakak kehilangan kesempatan belajar:\n✅ 9 tipe donor & cara approach-nya\n✅ 7 trigger psikologis yang bikin auto-transfer\n✅ Formula CTA yang proven\n\nSegera selesaikan pembayaran sebelum kuota habis ya Kak 🙏\n\nAda pertanyaan? Balas pesan ini.`
+    },
+    {
+      label: '3',
+      title: 'Reminder Final',
+      msg: `Kak ${firstName}, ini reminder terakhir dari kami 🙏\n\nPendaftaran webinar *Psikologi Sedekah* dengan invoice *${invoice}* (${amountStr}) akan segera *expired*.\n\nSetelah expired, Kakak perlu mendaftar ulang dan belum tentu masih ada slot tersedia.\n\n🔥 500+ campaign sudah buktikan strategi ini\n🔥 Materinya tidak dijual terpisah\n🔥 Bonus rekaman + e-certificate untuk yang hadir\n\nKlik link pembayaran yang sudah dikirim sebelumnya, atau balas pesan ini untuk bantuan.\n\nJangan sampai menyesal ya Kak! 🚀`
+    }
+  ];
+}
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 

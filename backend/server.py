@@ -431,8 +431,10 @@ async def register_webinar(data: WebinarRegistrantCreate):
     prices = event.get("ticket_prices", {})
     price = prices.get(data.ticket_type, {}).get("price", 0)
     now = datetime.now(timezone.utc)
-    count = await db.webinar_registrants.count_documents({})
-    invoice_id = f"MWN-PS-{now.strftime('%Y%m%d')}-{count+1:04d}"
+    # Use timestamp-based unique invoice to avoid collision after deletes
+    import random
+    seq = f"{now.strftime('%Y%m%d%H%M%S')}{random.randint(100,999)}"
+    invoice_id = f"MWN-PS-{seq}"
     registrant = WebinarRegistrant(
         event_id=data.event_id, full_name=data.full_name, email=data.email,
         whatsapp=data.whatsapp, role=data.role, ticket_type=data.ticket_type,

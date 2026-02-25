@@ -99,6 +99,7 @@ const WebinarLanding = () => {
     try {
       const res = await axios.post(`${BACKEND_URL}/api/webinar/register`, { ...formData, event_id: event.id });
       if (res.data.success) {
+        trackLead(res.data.data.amount, 'IDR');
         toast.success('Pendaftaran berhasil!');
         navigate(`/webinar/psikologi-sedekah/pembayaran?invoice=${res.data.data.invoice_id}`);
       }

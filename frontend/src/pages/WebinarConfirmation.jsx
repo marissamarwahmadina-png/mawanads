@@ -4,8 +4,11 @@ import axios from 'axios';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { CheckCircle2, Clock, ArrowLeft, Calendar, MessageSquare } from 'lucide-react';
+import { trackPurchase } from '../components/MetaPixel';
+import MetaPixel from '../components/MetaPixel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const WEBINAR_PIXEL_ID = '925288323242595';
 
 const WebinarConfirmation = () => {
   const [searchParams] = useSearchParams();
@@ -17,7 +20,12 @@ const WebinarConfirmation = () => {
   useEffect(() => {
     if (!invoiceId) return setLoading(false);
     axios.get(`${BACKEND_URL}/api/webinar/registrant/${invoiceId}`)
-      .then(res => setRegistrant(res.data))
+      .then(res => {
+        setRegistrant(res.data);
+        if (res.data.ticket_status === 'PAID') {
+          trackPurchase(res.data.total_amount || res.data.amount, 'IDR');
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [invoiceId]);

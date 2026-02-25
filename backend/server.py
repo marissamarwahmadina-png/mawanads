@@ -45,11 +45,10 @@ ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_NOTIFICATION_EMAIL', '')
 TRIPAY_API_KEY = os.environ.get('TRIPAY_API_KEY', '')
 TRIPAY_PRIVATE_KEY = os.environ.get('TRIPAY_PRIVATE_KEY', '')
 TRIPAY_MERCHANT_CODE = os.environ.get('TRIPAY_MERCHANT_CODE', '')
-TRIPAY_SANDBOX = os.environ.get('TRIPAY_SANDBOX', 'true').lower() == 'true'
+TRIPAY_MODE = os.environ.get('TRIPAY_MODE', 'sandbox')
 
 def get_tripay_base_url():
-    """Get TriPay API base URL based on environment"""
-    if TRIPAY_SANDBOX:
+    if TRIPAY_MODE == 'sandbox':
         return "https://tripay.co.id/api-sandbox"
     return "https://tripay.co.id/api"
 

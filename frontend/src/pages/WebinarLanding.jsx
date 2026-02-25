@@ -110,7 +110,12 @@ const WebinarLanding = () => {
     }
   };
 
-  const prices = event?.ticket_prices || {};
+  const fallbackPrices = {
+    individu: { label: 'Daftar Individu', original_price: 300000, price: 85000, persons: 1 },
+    duo: { label: 'Daftar 2 Orang', original_price: 600000, price: 149000, persons: 2 },
+    lembaga: { label: 'Daftar 1 Lembaga (3 Orang)', original_price: 900000, price: 199000, persons: 3 },
+  };
+  const prices = event?.ticket_prices || fallbackPrices;
   const seatsRemaining = event?.seats_remaining ?? 100;
 
   const roles = [

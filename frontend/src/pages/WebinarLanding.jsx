@@ -189,8 +189,8 @@ const WebinarLanding = () => {
           <h2 className="text-2xl font-bold text-center text-[#0D234A] mb-10">Bersama Pembicara</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gradient-to-br from-[#E8F8FA] to-white border border-cyan-100 rounded-2xl p-6 text-center">
-              <div className="w-24 h-24 bg-gradient-to-br from-[#00A2C1] to-[#0D234A] rounded-full flex items-center justify-center mx-auto mb-4">
-                <User size={40} className="text-white" />
+              <div className="w-32 h-32 rounded-full mx-auto mb-4 overflow-hidden border-4 border-[#00A2C1]/20">
+                <img src="https://customer-assets.emergentagent.com/job_ddbf1fbc-f764-4a39-a058-02ff8d4af149/artifacts/8bceq3oo_Foto%20Aan%20Sopiyan.jpeg" alt="Aan Sopiyan" className="w-full h-full object-cover object-top" />
               </div>
               <h3 className="text-lg font-bold text-[#0D234A]">Aan Sopiyan, S. Psi., C. HT.</h3>
               <p className="text-[#00A2C1] font-semibold text-sm mt-1">Digital Fundraiser Expert</p>
@@ -200,8 +200,8 @@ const WebinarLanding = () => {
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#E8F8FA] to-white border border-cyan-100 rounded-2xl p-6 text-center">
-              <div className="w-24 h-24 bg-gradient-to-br from-[#00A2C1] to-[#0D234A] rounded-full flex items-center justify-center mx-auto mb-4">
-                <User size={40} className="text-white" />
+              <div className="w-32 h-32 rounded-full mx-auto mb-4 overflow-hidden border-4 border-[#00A2C1]/20">
+                <img src="https://customer-assets.emergentagent.com/job_ddbf1fbc-f764-4a39-a058-02ff8d4af149/artifacts/8n8ozmh5_Foto%20Rizki%20Putra%20Utama.jpeg" alt="Rizki Putra Utama" className="w-full h-full object-cover object-top" />
               </div>
               <h3 className="text-lg font-bold text-[#0D234A]">Rizki Putra Utama, S.E., C. DMP</h3>
               <p className="text-[#00A2C1] font-semibold text-sm mt-1">CEO Mawanads</p>

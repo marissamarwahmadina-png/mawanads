@@ -610,6 +610,27 @@ async def admin_update_event(event_id: str, update: dict):
     await db.webinar_events.update_one({"id": event_id}, {"$set": update})
     return {"success": True}
 
+class UpdateRegistrantStatus(BaseModel):
+    status: str
+
+@api_router.put("/admin/webinar/registrants/{registrant_id}/status")
+async def admin_update_registrant_status(registrant_id: str, body: UpdateRegistrantStatus):
+    new_status = body.status.upper()
+    if new_status not in ["PAID", "PENDING_PAYMENT", "EXPIRED", "FAILED", "CANCELLED"]:
+        raise HTTPException(status_code=400, detail="Status tidak valid")
+    update_data = {"ticket_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if new_status == "PAID":
+        update_data["paid_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.webinar_registrants.update_one({"id": registrant_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Registrant tidak ditemukan")
+    return {"success": True}
+
+@api_router.get("/admin/webinar/callback-logs")
+async def admin_get_callback_logs():
+    logs = await db.tripay_callback_logs.find({}, {"_id": 0}).sort("received_at", -1).to_list(100)
+    return logs
+
 # Include the router in the main app
 app.include_router(api_router)
 

@@ -95,10 +95,14 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-8">
-          <p className="text-center text-gray-400">
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-gray-400">
             © {currentYear} Mawana Digital Services. All rights reserved.
           </p>
+          <div className="flex gap-6">
+            <a href="/ketentuan-layanan" className="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Ketentuan Layanan</a>
+            <a href="/kebijakan-privasi" className="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Kebijakan Privasi</a>
+          </div>
         </div>
       </div>
     </footer>

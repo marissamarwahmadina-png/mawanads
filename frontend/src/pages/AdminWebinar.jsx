@@ -137,28 +137,15 @@ export default function AdminWebinar() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/admin/dashboard')} data-testid="back-to-admin">
-              <ArrowLeft size={16} className="mr-1" /> Admin
-            </Button>
-            <span className="text-gray-300">|</span>
-            <h1 className="font-bold text-gray-900">Webinar Manager</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={fetchData} data-testid="refresh-btn">
-              <RefreshCw size={14} className="mr-1" /> Refresh
-            </Button>
-            <Button variant="ghost" size="sm" onClick={logout} data-testid="logout-btn">
-              <LogOut size={14} className="mr-1" /> Keluar
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminNav />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Webinar Manager</h1>
+          <Button variant="outline" size="sm" onClick={fetchData} data-testid="refresh-btn">
+            <RefreshCw size={14} className="mr-1" /> Refresh
+          </Button>
+        </div>
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-6" data-testid="tab-nav">
           {[

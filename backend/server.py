@@ -697,6 +697,13 @@ async def admin_get_callback_logs():
     logs = await db.tripay_callback_logs.find({}, {"_id": 0}).sort("received_at", -1).to_list(100)
     return logs
 
+@api_router.delete("/admin/webinar/registrants/{registrant_id}")
+async def admin_delete_registrant(registrant_id: str):
+    result = await db.webinar_registrants.delete_one({"id": registrant_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Registrant tidak ditemukan")
+    return {"success": True}
+
 # Include the router in the main app
 app.include_router(api_router)
 

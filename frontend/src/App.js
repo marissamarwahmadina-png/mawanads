@@ -7,6 +7,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminContacts from "./pages/AdminContacts";
 import AffiliateLanding from "./pages/AffiliateLanding";
 import AffiliateThankYou from "./pages/AffiliateThankYou";
+import KetentuanLayanan from "./pages/KetentuanLayanan";
+import KebijakanPrivasi from "./pages/KebijakanPrivasi";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -38,6 +40,8 @@ function App() {
             />
             <Route path="/affiliate/:affiliator" element={<AffiliateLanding />} />
             <Route path="/affiliate/:affiliator/thankyou" element={<AffiliateThankYou />} />
+            <Route path="/ketentuan-layanan" element={<KetentuanLayanan />} />
+            <Route path="/kebijakan-privasi" element={<KebijakanPrivasi />} />
           </Routes>
         </BrowserRouter>
         <Toaster />

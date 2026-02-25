@@ -570,7 +570,12 @@ async def tripay_callback(request: Request):
     elif status == "FAILED":
         update_data["ticket_status"] = "FAILED"
     if merchant_ref:
-        await db.webinar_registrants.update_one({"invoice_id": merchant_ref}, {"$set": update_data})
+        result = await db.webinar_registrants.update_one({"invoice_id": merchant_ref}, {"$set": update_data})
+        if status == "PAID" and result.modified_count > 0:
+            reg = await db.webinar_registrants.find_one({"invoice_id": merchant_ref}, {"_id": 0})
+            if reg:
+                event = await db.webinar_events.find_one({"id": reg.get("event_id")}, {"_id": 0})
+                asyncio.create_task(send_payment_confirmation_email(reg, event))
     return {"success": True}
 
 ## ============== ADMIN WEBINAR ROUTES ==============

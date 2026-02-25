@@ -67,22 +67,34 @@ function FAQItem({ q, a }) {
 const WebinarLanding = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [eventError, setEventError] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '', whatsapp: '', role: '', ticket_type: 'individu' });
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const loadEvent = () => {
+    setEventError(false);
     axios.get(`${BACKEND_URL}/api/webinar/events/psikologi-sedekah`)
       .then(res => { setEvent(res.data); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => { setEventError(true); setLoading(false); });
+  };
+
+  useEffect(() => { loadEvent(); }, []);
 
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!event) return;
+    if (!event) {
+      toast.error('Data event belum dimuat. Mohon refresh halaman.');
+      loadEvent();
+      return;
+    }
+    if (!formData.role) {
+      toast.error('Mohon pilih peran/jabatan Anda');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await axios.post(`${BACKEND_URL}/api/webinar/register`, { ...formData, event_id: event.id });
@@ -91,7 +103,7 @@ const WebinarLanding = () => {
         navigate(`/webinar/psikologi-sedekah/pembayaran?invoice=${res.data.data.invoice_id}`);
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Gagal mendaftar');
+      toast.error(err.response?.data?.detail || 'Gagal mendaftar. Silakan coba lagi.');
     } finally {
       setSubmitting(false);
     }

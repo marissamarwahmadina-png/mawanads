@@ -87,7 +87,7 @@ const WebinarLanding = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!event) {
-      toast.error('Data event belum dimuat. Mohon refresh halaman.');
+      toast.error('Sedang memuat data, mohon tunggu sebentar...');
       loadEvent();
       return;
     }

@@ -395,6 +395,188 @@ class WebinarRegistrant(BaseModel):
     utm_medium: Optional[str] = None
     utm_campaign: Optional[str] = None
 
+## ============== WEBINAR API ROUTES ==============
+
+@api_router.get("/webinar/events")
+async def get_webinar_events():
+    events = await db.webinar_events.find({}, {"_id": 0}).to_list(100)
+    return events
+
+@api_router.get("/webinar/events/{slug}")
+async def get_webinar_event_by_slug(slug: str):
+    event = await db.webinar_events.find_one({"slug": slug}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event tidak ditemukan")
+    paid_count = await db.webinar_registrants.count_documents({"event_id": event["id"], "ticket_status": "PAID"})
+    event["seats_taken"] = paid_count
+    event["seats_remaining"] = event.get("capacity_total", 100) - paid_count
+    return event
+
+@api_router.post("/webinar/register")
+async def register_webinar(data: WebinarRegistrantCreate):
+    event = await db.webinar_events.find_one({"id": data.event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event tidak ditemukan")
+    prices = event.get("ticket_prices", {})
+    price = prices.get(data.ticket_type, {}).get("price", 0)
+    now = datetime.now(timezone.utc)
+    count = await db.webinar_registrants.count_documents({})
+    invoice_id = f"MWN-PS-{now.strftime('%Y%m%d')}-{count+1:04d}"
+    registrant = WebinarRegistrant(
+        event_id=data.event_id, full_name=data.full_name, email=data.email,
+        whatsapp=data.whatsapp, role=data.role, ticket_type=data.ticket_type,
+        invoice_id=invoice_id, amount=price, total_amount=price,
+        payment_method_code=data.payment_method or ""
+    )
+    doc = registrant.model_dump()
+    await db.webinar_registrants.insert_one(doc)
+    asyncio.create_task(send_admin_notification(
+        subject=f"Registrasi Webinar: {data.full_name}",
+        html_content=f"<h2>Registrasi Baru</h2><p>Nama: {data.full_name}<br>Email: {data.email}<br>WA: {data.whatsapp}<br>Tiket: {data.ticket_type}<br>Harga: Rp {price:,}<br>Invoice: {invoice_id}</p>"
+    ))
+    return {"success": True, "data": {"id": registrant.id, "invoice_id": invoice_id, "amount": price}}
+
+@api_router.get("/webinar/registrant/{invoice_id}")
+async def get_registrant_by_invoice(invoice_id: str):
+    reg = await db.webinar_registrants.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Invoice tidak ditemukan")
+    return reg
+
+@api_router.get("/webinar/payment-channels")
+async def get_payment_channels():
+    if not TRIPAY_API_KEY:
+        return {"channels": []}
+    try:
+        base_url = get_tripay_base_url()
+        async with httpx.AsyncClient() as hc:
+            resp = await hc.get(f"{base_url}/merchant/payment-channel", headers={"Authorization": f"Bearer {TRIPAY_API_KEY}"})
+            data = resp.json()
+            if data.get("success"):
+                return {"channels": data["data"]}
+            return {"channels": []}
+    except Exception as e:
+        logger.error(f"TriPay channel error: {e}")
+        return {"channels": []}
+
+@api_router.post("/webinar/create-payment")
+async def create_tripay_payment(invoice_id: str, method: str):
+    reg = await db.webinar_registrants.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Invoice tidak ditemukan")
+    if not TRIPAY_API_KEY or not TRIPAY_PRIVATE_KEY or not TRIPAY_MERCHANT_CODE:
+        raise HTTPException(status_code=500, detail="TriPay belum dikonfigurasi")
+    base_url = get_tripay_base_url()
+    amount = reg["amount"]
+    merchant_ref = reg["invoice_id"]
+    signature = hmac.new(
+        TRIPAY_PRIVATE_KEY.encode(), (TRIPAY_MERCHANT_CODE + merchant_ref + str(amount)).encode(), hashlib.sha256
+    ).hexdigest()
+    expired_time = int((datetime.now(timezone.utc) + timedelta(hours=2)).timestamp())
+    base_domain = os.environ.get('BASE_URL', '')
+    payload = {
+        "method": method, "merchant_ref": merchant_ref, "amount": amount,
+        "customer_name": reg["full_name"], "customer_email": reg["email"], "customer_phone": reg["whatsapp"],
+        "order_items": [{"name": "Webinar Psikologi Sedekah", "price": amount, "quantity": 1}],
+        "return_url": f"{base_domain}/webinar/psikologi-sedekah/konfirmasi?invoice={merchant_ref}",
+        "expired_time": expired_time, "signature": signature
+    }
+    try:
+        async with httpx.AsyncClient() as hc:
+            resp = await hc.post(f"{base_url}/transaction/create", json=payload, headers={"Authorization": f"Bearer {TRIPAY_API_KEY}"})
+            data = resp.json()
+            if data.get("success"):
+                tx = data["data"]
+                await db.webinar_registrants.update_one({"invoice_id": invoice_id}, {"$set": {
+                    "payment_method_code": method, "tripay_reference": tx.get("reference"),
+                    "tripay_checkout_url": tx.get("checkout_url"), "pay_code": tx.get("pay_code"),
+                    "fee": tx.get("total_fee", 0), "total_amount": tx.get("amount", amount),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }})
+                return {"success": True, "data": tx}
+            raise HTTPException(status_code=400, detail=data.get("message", "Gagal"))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"TriPay error: {e}")
+        raise HTTPException(status_code=500, detail="Gagal menghubungi TriPay")
+
+from fastapi import Request
+
+@api_router.post("/tripay/callback")
+async def tripay_callback(request: Request):
+    body = await request.body()
+    body_str = body.decode('utf-8')
+    callback_signature = request.headers.get('X-Callback-Signature', '')
+    callback_event = request.headers.get('X-Callback-Event', '')
+    expected_signature = hmac.new(TRIPAY_PRIVATE_KEY.encode(), body_str.encode(), hashlib.sha256).hexdigest()
+    signature_valid = hmac.compare_digest(callback_signature, expected_signature)
+    try:
+        payload = json.loads(body_str)
+    except Exception:
+        payload = {}
+    await db.tripay_callback_logs.insert_one({
+        "id": str(uuid.uuid4()), "invoice_id": payload.get("merchant_ref", ""),
+        "tripay_reference": payload.get("reference", ""), "headers_json": dict(request.headers),
+        "payload_json": payload, "signature_valid": signature_valid,
+        "received_at": datetime.now(timezone.utc).isoformat()
+    })
+    if not signature_valid:
+        return {"success": False, "message": "Invalid signature"}
+    if callback_event != "payment_status":
+        return {"success": True}
+    merchant_ref = payload.get("merchant_ref", "")
+    status = payload.get("status", "").upper()
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if status == "PAID":
+        update_data["ticket_status"] = "PAID"
+        update_data["paid_at"] = datetime.now(timezone.utc).isoformat()
+        update_data["tripay_reference"] = payload.get("reference", "")
+    elif status == "EXPIRED":
+        update_data["ticket_status"] = "EXPIRED"
+    elif status == "FAILED":
+        update_data["ticket_status"] = "FAILED"
+    if merchant_ref:
+        await db.webinar_registrants.update_one({"invoice_id": merchant_ref}, {"$set": update_data})
+    return {"success": True}
+
+## ============== ADMIN WEBINAR ROUTES ==============
+
+@api_router.get("/admin/webinar/dashboard")
+async def admin_webinar_dashboard():
+    events = await db.webinar_events.find({}, {"_id": 0}).to_list(100)
+    total_registrants = await db.webinar_registrants.count_documents({})
+    total_paid = await db.webinar_registrants.count_documents({"ticket_status": "PAID"})
+    total_pending = await db.webinar_registrants.count_documents({"ticket_status": "PENDING_PAYMENT"})
+    paid_regs = await db.webinar_registrants.find({"ticket_status": "PAID"}, {"_id": 0, "amount": 1}).to_list(10000)
+    total_revenue = sum(r.get("amount", 0) for r in paid_regs)
+    recent = await db.webinar_registrants.find({}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    return {
+        "events": events, "total_registrants": total_registrants,
+        "total_paid": total_paid, "total_pending": total_pending,
+        "total_revenue": total_revenue, "recent_transactions": recent
+    }
+
+@api_router.get("/admin/webinar/registrants")
+async def admin_get_registrants(event_id: Optional[str] = None, status: Optional[str] = None):
+    query = {}
+    if event_id: query["event_id"] = event_id
+    if status: query["ticket_status"] = status
+    return await db.webinar_registrants.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+
+@api_router.post("/admin/webinar/events")
+async def admin_create_event(event: dict):
+    event_obj = WebinarEvent(**event)
+    doc = event_obj.model_dump()
+    await db.webinar_events.insert_one(doc)
+    return {"success": True, "data": {k: v for k, v in doc.items() if k != '_id'}}
+
+@api_router.put("/admin/webinar/events/{event_id}")
+async def admin_update_event(event_id: str, update: dict):
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.webinar_events.update_one({"id": event_id}, {"$set": update})
+    return {"success": True}
+
 # Include the router in the main app
 app.include_router(api_router)
 

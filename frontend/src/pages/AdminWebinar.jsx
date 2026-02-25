@@ -54,6 +54,7 @@ export default function AdminWebinar() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingId, setEditingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 

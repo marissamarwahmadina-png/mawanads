@@ -536,6 +536,67 @@ async def create_tripay_payment(req: CreatePaymentRequest):
 
 from fastapi import Request
 
+async def send_payment_confirmation_email(registrant: dict, event: dict):
+    """Send payment confirmation email to registrant"""
+    email = registrant.get("email", "")
+    if not email or not resend.api_key:
+        return
+    name = registrant.get("full_name", "")
+    invoice = registrant.get("invoice_id", "")
+    ticket = registrant.get("ticket_type", "").capitalize()
+    amount = registrant.get("total_amount") or registrant.get("amount", 0)
+    event_title = event.get("title", "Webinar") if event else "Webinar"
+    event_date = "11 Maret 2026, 10:00 WIB"
+    if event and event.get("start_datetime"):
+        try:
+            dt = datetime.fromisoformat(event["start_datetime"].replace("Z", "+00:00"))
+            event_date = dt.strftime("%d %B %Y, %H:%M") + " WIB"
+        except Exception:
+            pass
+    try:
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [email],
+            "subject": f"Konfirmasi Pembayaran - {event_title}",
+            "html": f"""
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;">
+                <div style="background:linear-gradient(135deg,#0D234A,#00A2C1);padding:32px 24px;text-align:center;">
+                    <h1 style="color:#fff;margin:0;font-size:22px;">Pembayaran Berhasil!</h1>
+                    <p style="color:#E8F8FA;margin:8px 0 0;font-size:14px;">Terima kasih, {name}</p>
+                </div>
+                <div style="padding:24px;">
+                    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:20px;">
+                        <h3 style="color:#0D234A;margin:0 0 16px;font-size:16px;">Detail Invoice</h3>
+                        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                            <tr><td style="padding:8px 0;color:#6b7280;">Invoice</td><td style="padding:8px 0;text-align:right;font-family:monospace;font-weight:600;">{invoice}</td></tr>
+                            <tr style="border-top:1px solid #f3f4f6;"><td style="padding:8px 0;color:#6b7280;">Nama</td><td style="padding:8px 0;text-align:right;">{name}</td></tr>
+                            <tr style="border-top:1px solid #f3f4f6;"><td style="padding:8px 0;color:#6b7280;">Tipe Tiket</td><td style="padding:8px 0;text-align:right;">{ticket}</td></tr>
+                            <tr style="border-top:1px solid #f3f4f6;"><td style="padding:8px 0;color:#6b7280;">Total Bayar</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#00A2C1;font-size:16px;">Rp {amount:,.0f}</td></tr>
+                            <tr style="border-top:1px solid #f3f4f6;"><td style="padding:8px 0;color:#6b7280;">Status</td><td style="padding:8px 0;text-align:right;"><span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">LUNAS</span></td></tr>
+                        </table>
+                    </div>
+                    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:20px;margin-bottom:20px;">
+                        <h3 style="color:#1e40af;margin:0 0 8px;font-size:16px;">Jadwal Webinar</h3>
+                        <p style="margin:4px 0;color:#1e3a5f;font-size:14px;"><strong>{event_title}</strong></p>
+                        <p style="margin:4px 0;color:#1e3a5f;font-size:14px;">{event_date}</p>
+                        <p style="margin:4px 0;color:#1e3a5f;font-size:14px;">Online via Google Meet</p>
+                        <p style="margin:12px 0 0;color:#6b7280;font-size:12px;">Link Google Meet akan dikirimkan via email & WhatsApp H-1 sebelum acara.</p>
+                    </div>
+                    <div style="text-align:center;margin-top:24px;">
+                        <a href="https://wa.me/6289655128024?text=Halo,%20saya%20sudah%20bayar%20webinar%20dengan%20invoice%20{invoice}" style="display:inline-block;padding:12px 32px;background:#22c55e;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">Gabung Grup WhatsApp</a>
+                    </div>
+                </div>
+                <div style="padding:16px 24px;text-align:center;color:#9ca3af;font-size:12px;">
+                    <p>&copy; 2026 Mawana Digital Services. All rights reserved.</p>
+                </div>
+            </div>
+            """
+        }
+        await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Payment confirmation email sent to {email} for invoice {invoice}")
+    except Exception as e:
+        logger.error(f"Failed to send confirmation email to {email}: {e}")
+
 @api_router.post("/tripay/callback")
 async def tripay_callback(request: Request):
     body = await request.body()

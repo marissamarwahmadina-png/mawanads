@@ -12,7 +12,7 @@ import {
   Zap, ShieldCheck, Award, MessageSquare, ChevronDown, ChevronUp,
   Heart, BarChart3, User, Mail, Phone, Building, Gift, BookOpen, Star, Lightbulb
 } from 'lucide-react';
-import MetaPixel from '../components/MetaPixel';
+import MetaPixel, { trackLead } from '../components/MetaPixel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const WEBINAR_PIXEL_ID = '925288323242595';

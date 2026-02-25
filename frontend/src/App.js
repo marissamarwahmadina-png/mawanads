@@ -12,6 +12,7 @@ import KebijakanPrivasi from "./pages/KebijakanPrivasi";
 import WebinarLanding from "./pages/WebinarLanding";
 import WebinarPayment from "./pages/WebinarPayment";
 import WebinarConfirmation from "./pages/WebinarConfirmation";
+import AdminWebinar from "./pages/AdminWebinar";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -38,6 +39,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminContacts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/webinar"
+              element={
+                <ProtectedRoute>
+                  <AdminWebinar />
                 </ProtectedRoute>
               }
             />

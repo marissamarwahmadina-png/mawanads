@@ -335,30 +335,33 @@ export default function AdminWebinar() {
                           <td className="px-4 py-3 text-right font-semibold">Rp {(r.total_amount || r.amount)?.toLocaleString('id-ID')}</td>
                           <td className="px-4 py-3 text-xs text-gray-500">{r.payment_method_code || '-'}</td>
                           <td className="px-4 py-3 text-xs text-gray-500">{new Date(r.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1 flex-wrap">
-                              <button onClick={() => setEditingId(editingId === r.id ? null : r.id)}
-                                className="text-gray-400 hover:text-cyan-600 transition-colors p-1" data-testid={`edit-status-${r.id}`}
-                                title="Edit status">
-                                <Edit3 size={14} />
-                              </button>
-                              {deletingId === r.id ? (
-                                <div className="flex items-center gap-1">
-                                  <button onClick={() => deleteRegistrant(r.id)}
-                                    className="text-white bg-red-500 hover:bg-red-600 rounded px-2 py-0.5 text-xs font-medium"
-                                    data-testid={`confirm-delete-${r.id}`}>Hapus</button>
-                                  <button onClick={() => setDeletingId(null)}
-                                    className="text-gray-500 hover:text-gray-700 text-xs px-1">Batal</button>
-                                </div>
-                              ) : (
-                                <button onClick={() => setDeletingId(r.id)}
-                                  className="text-gray-400 hover:text-red-500 transition-colors p-1" data-testid={`delete-btn-${r.id}`}
-                                  title="Hapus registrant">
-                                  <Trash2 size={14} />
+                          <td className="px-3 py-3">
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => setEditingId(editingId === r.id ? null : r.id)}
+                                  className="text-gray-400 hover:text-cyan-600 transition-colors p-1" data-testid={`edit-status-${r.id}`}
+                                  title="Edit status">
+                                  <Edit3 size={14} />
                                 </button>
-                              )}
+                                {deletingId === r.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={() => deleteRegistrant(r.id)}
+                                      className="text-white bg-red-500 hover:bg-red-600 rounded px-2 py-0.5 text-xs font-medium"
+                                      data-testid={`confirm-delete-${r.id}`}>Hapus</button>
+                                    <button onClick={() => setDeletingId(null)}
+                                      className="text-gray-500 hover:text-gray-700 text-xs px-1">Batal</button>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setDeletingId(r.id)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-1" data-testid={`delete-btn-${r.id}`}
+                                    title="Hapus registrant">
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
                               {r.ticket_status === 'PENDING_PAYMENT' && r.whatsapp && (
-                                <div className="flex items-center gap-0.5 ml-1">
+                                <div className="flex items-center gap-1">
+                                  <MessageCircle size={12} className="text-green-500 shrink-0" />
                                   {getWaReminders(r.full_name, r.invoice_id, r.total_amount || r.amount).map(rm => {
                                     const phone = r.whatsapp.replace(/^0/, '62');
                                     const url = `https://wa.me/${phone}?text=${encodeURIComponent(rm.msg)}`;
@@ -366,7 +369,7 @@ export default function AdminWebinar() {
                                       <a key={rm.label} href={url} target="_blank" rel="noopener noreferrer"
                                         title={rm.title}
                                         data-testid={`wa-reminder-${rm.label}-${r.id}`}
-                                        className="inline-flex items-center justify-center w-6 h-6 rounded bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold transition-colors">
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold transition-colors">
                                         {rm.label}
                                       </a>
                                     );

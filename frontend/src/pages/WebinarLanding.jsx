@@ -130,6 +130,17 @@ const WebinarLanding = () => {
     return <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-white flex items-center justify-center"><div className="animate-spin w-10 h-10 border-4 border-[#00C0D8] border-t-transparent rounded-full" /></div>;
   }
 
+  if (eventError && !event) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-white flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-gray-700 mb-4">Gagal memuat data event. Silakan coba lagi.</p>
+          <button onClick={loadEvent} className="bg-[#00A2C1] text-white px-6 py-2 rounded-lg hover:bg-[#008DA8]">Muat Ulang</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#E8F8FA] via-white to-[#E8F8FA]">
       <MetaPixel pixelId={WEBINAR_PIXEL_ID} />

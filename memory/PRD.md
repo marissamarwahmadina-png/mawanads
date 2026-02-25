@@ -13,16 +13,22 @@ Landing page & digital services platform untuk "Mawana Digital Services" dengan 
 - Email notification via Resend ke admin
 - Analytics dashboard (/admin/dashboard) + Database kontak (/admin/contact)
 
-### Webinar System (Completed - Phase 1+2)
-- Landing page /webinar/psikologi-sedekah (conversion-optimized, dark theme)
+### Webinar System (Completed - Full Implementation)
+- Landing page /webinar/psikologi-sedekah (conversion-optimized, light theme)
   - Hero, Pain-Agitate-Solution, What You'll Learn, Speaker, Social Proof, Urgency, Ticket Form, FAQ, Final CTA
   - Sticky CTA mobile, countdown, sisa kursi
 - 3 Tier tiket: Individu Rp85k, Duo Rp149k, Lembaga Rp199k
 - Webinar: 11 Maret 2026, 10:00 WIB
 - Registration form → Invoice generation → Payment page → Confirmation
-- TriPay payment integration (code ready, waiting for credentials)
-- TriPay callback/webhook endpoint with signature validation
-- Admin webinar dashboard API ready
+- TriPay payment integration (production API, merchant T48843)
+  - Payment channel fetch API
+  - Transaction creation with HMAC-SHA256 signature
+  - Callback/webhook handler with signature validation
+  - Status update (PAID/EXPIRED/FAILED) from callback
+- Admin webinar dashboard (/admin/webinar)
+  - Dashboard tab: stats (registrants, paid, pending, revenue), event info, recent transactions
+  - Registrants tab: search, filter, export CSV, manual status update
+  - Callback logs tab: view TriPay webhook logs
 
 ### Legal Pages (Completed)
 - /ketentuan-layanan — Terms of Service
@@ -34,17 +40,24 @@ Landing page & digital services platform untuk "Mawana Digital Services" dengan 
 - Backend: FastAPI, Motor (MongoDB), Resend (email), httpx (TriPay API)
 - Auth: JWT
 - DB: MongoDB (contacts, affiliate_leads, webinar_events, webinar_registrants, tripay_callback_logs)
-- Payment: TriPay (pending configuration)
+- Payment: TriPay (production, merchant T48843)
 
 ## Routes
 - / — Homepage
 - /admin/login, /admin/dashboard, /admin/contact — Admin
+- /admin/webinar — Admin Webinar Manager (NEW)
 - /affiliate/:affiliator, /affiliate/:affiliator/thankyou — Affiliate
 - /webinar/psikologi-sedekah — Webinar landing
 - /webinar/psikologi-sedekah/pembayaran — Payment
 - /webinar/psikologi-sedekah/konfirmasi — Confirmation
 - /ketentuan-layanan, /kebijakan-privasi — Legal
 
-## Pending
-- TriPay API credentials (TRIPAY_API_KEY, TRIPAY_PRIVATE_KEY, TRIPAY_MERCHANT_CODE)
-- Admin webinar dashboard frontend pages
+## BLOCKER: TriPay IP Whitelisting
+- IP server: **34.16.56.64** perlu ditambahkan ke whitelist TriPay merchant dashboard
+- Tanpa ini, payment channels dan create transaction akan gagal
+- URL: https://tripay.co.id/member > Settings > Whitelist IP
+
+## Pending / Backlog
+- P2: Role-based access control (SUPER_ADMIN) untuk admin
+- P2: Email konfirmasi otomatis ke peserta setelah pembayaran berhasil
+- P3: QR code tiket untuk absensi di hari H

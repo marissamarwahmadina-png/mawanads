@@ -303,7 +303,7 @@ export default function AdminWebinar() {
                         <th className="px-4 py-3 text-right">Total</th>
                         <th className="px-4 py-3 text-left">Metode</th>
                         <th className="px-4 py-3 text-left">Tanggal</th>
-                        <th className="px-4 py-3 text-center">Aksi</th>
+                        <th className="px-3 py-3 text-left min-w-[140px]">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">

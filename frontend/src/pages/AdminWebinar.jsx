@@ -95,6 +95,17 @@ export default function AdminWebinar() {
     }
   };
 
+  const deleteRegistrant = async (regId) => {
+    try {
+      await axios.delete(`${BACKEND_URL}/api/admin/webinar/registrants/${regId}`, { headers });
+      toast.success('Registrant berhasil dihapus');
+      setDeletingId(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Gagal menghapus');
+    }
+  };
+
   const filteredRegistrants = useMemo(() => {
     return registrants.filter(r => {
       const matchSearch = !search || r.full_name?.toLowerCase().includes(search.toLowerCase()) ||

@@ -9,6 +9,9 @@ import AffiliateLanding from "./pages/AffiliateLanding";
 import AffiliateThankYou from "./pages/AffiliateThankYou";
 import KetentuanLayanan from "./pages/KetentuanLayanan";
 import KebijakanPrivasi from "./pages/KebijakanPrivasi";
+import WebinarLanding from "./pages/WebinarLanding";
+import WebinarPayment from "./pages/WebinarPayment";
+import WebinarConfirmation from "./pages/WebinarConfirmation";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -42,6 +45,9 @@ function App() {
             <Route path="/affiliate/:affiliator/thankyou" element={<AffiliateThankYou />} />
             <Route path="/ketentuan-layanan" element={<KetentuanLayanan />} />
             <Route path="/kebijakan-privasi" element={<KebijakanPrivasi />} />
+            <Route path="/webinar/psikologi-sedekah" element={<WebinarLanding />} />
+            <Route path="/webinar/psikologi-sedekah/pembayaran" element={<WebinarPayment />} />
+            <Route path="/webinar/psikologi-sedekah/konfirmasi" element={<WebinarConfirmation />} />
           </Routes>
         </BrowserRouter>
         <Toaster />

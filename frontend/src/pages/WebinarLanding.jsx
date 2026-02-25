@@ -314,8 +314,8 @@ const WebinarLanding = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { text: '"Setelah webinar ini, conversion rate campaign kami naik 2.5x dalam 2 bulan. Materinya sangat aplikatif!"', name: 'Tim Fundraising - Yayasan A' },
-              { text: '"Akhirnya paham kenapa CTA kami selama ini kurang efektif. Approach psikologinya game-changer."', name: 'Head of Marketing - NGO B' },
+              { text: '"Setelah webinar ini, conversion rate campaign kami naik 2.5x dalam 2 bulan. Materinya sangat aplikatif!"', name: 'Tim Fundraising - Yayasan Insan Hebat Indonesia @amalhebat' },
+              { text: '"Akhirnya paham kenapa CTA kami selama ini kurang efektif. Approach psikologinya game-changer."', name: 'Head of Marketing - Yayasan Saluran Kebaikan Global @salurkankebaikan' },
             ].map((t, i) => (
               <div key={i} className="bg-[#E8F8FA]/50 border border-cyan-100 rounded-xl p-6 text-left">
                 <p className="text-gray-600 italic mb-3">{t.text}</p>

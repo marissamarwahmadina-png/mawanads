@@ -347,6 +347,65 @@ async def get_affiliate_leads():
         logger.error(f"Error fetching affiliate leads: {str(e)}")
         raise HTTPException(status_code=500, detail="Terjadi kesalahan server")
 
+# TriPay Configuration
+TRIPAY_API_KEY = os.environ.get('TRIPAY_API_KEY', '')
+TRIPAY_PRIVATE_KEY = os.environ.get('TRIPAY_PRIVATE_KEY', '')
+TRIPAY_MERCHANT_CODE = os.environ.get('TRIPAY_MERCHANT_CODE', '')
+TRIPAY_MODE = os.environ.get('TRIPAY_MODE', 'sandbox')
+
+def get_tripay_base_url():
+    if TRIPAY_MODE == 'production':
+        return 'https://tripay.co.id/api'
+    return 'https://tripay.co.id/api-sandbox'
+
+# Webinar Models
+class WebinarEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    slug: str
+    start_datetime: str
+    duration_minutes: int = 120
+    capacity_total: int = 100
+    ticket_prices: dict = Field(default_factory=dict)
+    countdown_enabled: bool = True
+    bonus_deadline_datetime: Optional[str] = None
+    status: str = "active"
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class WebinarRegistrantCreate(BaseModel):
+    event_id: str
+    full_name: str
+    email: EmailStr
+    whatsapp: str
+    role: str
+    ticket_type: str
+    payment_method: Optional[str] = None
+
+class WebinarRegistrant(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: str
+    full_name: str
+    email: str
+    whatsapp: str
+    role: str
+    ticket_type: str
+    ticket_status: str = "PENDING_PAYMENT"
+    invoice_id: str = ""
+    payment_method_code: str = ""
+    tripay_reference: Optional[str] = None
+    tripay_checkout_url: Optional[str] = None
+    pay_code: Optional[str] = None
+    amount: int = 0
+    fee: int = 0
+    total_amount: int = 0
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    paid_at: Optional[str] = None
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
+
 # Include the router in the main app
 app.include_router(api_router)
 

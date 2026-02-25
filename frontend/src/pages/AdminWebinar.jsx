@@ -80,7 +80,7 @@ export default function AdminWebinar() {
     } catch { /* ignore */ }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateStatus = async (regId, newStatus) => {
     try {

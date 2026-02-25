@@ -372,6 +372,7 @@ export const AdminContacts = () => {
           </TabsContent>
         </Tabs>
       </div>
+      </div>
     </div>
   );
 };

@@ -150,6 +150,11 @@ class Token(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/health")
+async def root_health_check():
+    """Health check endpoint for Kubernetes probes (without /api prefix)"""
+    return {"status": "healthy", "service": "mawana-api"}
+
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint for Kubernetes"""

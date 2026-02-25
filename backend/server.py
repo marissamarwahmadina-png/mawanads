@@ -15,6 +15,11 @@ from passlib.context import CryptContext
 import resend
 
 
+import hashlib
+import hmac
+import httpx
+import json
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 

@@ -470,9 +470,13 @@ async def get_payment_channels():
         logger.error(f"TriPay channel error: {e}")
         return {"channels": []}
 
+class CreatePaymentRequest(BaseModel):
+    invoice_id: str
+    method: str
+
 @api_router.post("/webinar/create-payment")
-async def create_tripay_payment(invoice_id: str, method: str):
-    reg = await db.webinar_registrants.find_one({"invoice_id": invoice_id}, {"_id": 0})
+async def create_tripay_payment(req: CreatePaymentRequest):
+    reg = await db.webinar_registrants.find_one({"invoice_id": req.invoice_id}, {"_id": 0})
     if not reg:
         raise HTTPException(status_code=404, detail="Invoice tidak ditemukan")
     if not TRIPAY_API_KEY or not TRIPAY_PRIVATE_KEY or not TRIPAY_MERCHANT_CODE:
@@ -481,35 +485,53 @@ async def create_tripay_payment(invoice_id: str, method: str):
     amount = reg["amount"]
     merchant_ref = reg["invoice_id"]
     signature = hmac.new(
-        TRIPAY_PRIVATE_KEY.encode(), (TRIPAY_MERCHANT_CODE + merchant_ref + str(amount)).encode(), hashlib.sha256
+        TRIPAY_PRIVATE_KEY.encode('utf-8'),
+        (TRIPAY_MERCHANT_CODE + merchant_ref + str(amount)).encode('utf-8'),
+        hashlib.sha256
     ).hexdigest()
-    expired_time = int((datetime.now(timezone.utc) + timedelta(hours=2)).timestamp())
-    base_domain = os.environ.get('BASE_URL', '')
+    expired_time = int((datetime.now(timezone.utc) + timedelta(hours=24)).timestamp())
+    base_domain = os.environ.get('REACT_APP_FRONTEND_URL', '')
+    callback_url = os.environ.get('TRIPAY_CALLBACK_URL', '')
     payload = {
-        "method": method, "merchant_ref": merchant_ref, "amount": amount,
-        "customer_name": reg["full_name"], "customer_email": reg["email"], "customer_phone": reg["whatsapp"],
-        "order_items": [{"name": "Webinar Psikologi Sedekah", "price": amount, "quantity": 1}],
+        "method": req.method,
+        "merchant_ref": merchant_ref,
+        "amount": amount,
+        "customer_name": reg["full_name"],
+        "customer_email": reg["email"],
+        "customer_phone": reg["whatsapp"],
+        "order_items": [{"sku": "WEBINAR-PS", "name": "Webinar Psikologi Sedekah", "price": amount, "quantity": 1}],
         "return_url": f"{base_domain}/webinar/psikologi-sedekah/konfirmasi?invoice={merchant_ref}",
-        "expired_time": expired_time, "signature": signature
+        "expired_time": expired_time,
+        "signature": signature
     }
+    if callback_url:
+        payload["callback_url"] = callback_url
     try:
-        async with httpx.AsyncClient() as hc:
-            resp = await hc.post(f"{base_url}/transaction/create", json=payload, headers={"Authorization": f"Bearer {TRIPAY_API_KEY}"})
+        async with httpx.AsyncClient(timeout=30) as hc:
+            resp = await hc.post(
+                f"{base_url}/transaction/create",
+                json=payload,
+                headers={"Authorization": f"Bearer {TRIPAY_API_KEY}"}
+            )
             data = resp.json()
+            logger.info(f"TriPay create-payment response: {resp.status_code} - {data.get('success')} - {data.get('message', '')}")
             if data.get("success"):
                 tx = data["data"]
-                await db.webinar_registrants.update_one({"invoice_id": invoice_id}, {"$set": {
-                    "payment_method_code": method, "tripay_reference": tx.get("reference"),
-                    "tripay_checkout_url": tx.get("checkout_url"), "pay_code": tx.get("pay_code"),
-                    "fee": tx.get("total_fee", 0), "total_amount": tx.get("amount", amount),
+                await db.webinar_registrants.update_one({"invoice_id": req.invoice_id}, {"$set": {
+                    "payment_method_code": req.method,
+                    "tripay_reference": tx.get("reference"),
+                    "tripay_checkout_url": tx.get("checkout_url"),
+                    "pay_code": tx.get("pay_code"),
+                    "fee": tx.get("total_fee", 0),
+                    "total_amount": tx.get("amount", amount),
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }})
                 return {"success": True, "data": tx}
-            raise HTTPException(status_code=400, detail=data.get("message", "Gagal"))
+            raise HTTPException(status_code=400, detail=data.get("message", "Gagal membuat pembayaran"))
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"TriPay error: {e}")
+        logger.error(f"TriPay create-payment error: {e}")
         raise HTTPException(status_code=500, detail="Gagal menghubungi TriPay")
 
 from fastapi import Request

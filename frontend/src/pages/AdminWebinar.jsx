@@ -335,8 +335,8 @@ export default function AdminWebinar() {
                           <td className="px-4 py-3 text-right font-semibold">Rp {(r.total_amount || r.amount)?.toLocaleString('id-ID')}</td>
                           <td className="px-4 py-3 text-xs text-gray-500">{r.payment_method_code || '-'}</td>
                           <td className="px-4 py-3 text-xs text-gray-500">{new Date(r.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 flex-wrap">
                               <button onClick={() => setEditingId(editingId === r.id ? null : r.id)}
                                 className="text-gray-400 hover:text-cyan-600 transition-colors p-1" data-testid={`edit-status-${r.id}`}
                                 title="Edit status">
@@ -356,6 +356,22 @@ export default function AdminWebinar() {
                                   title="Hapus registrant">
                                   <Trash2 size={14} />
                                 </button>
+                              )}
+                              {r.ticket_status === 'PENDING_PAYMENT' && r.whatsapp && (
+                                <div className="flex items-center gap-0.5 ml-1">
+                                  {getWaReminders(r.full_name, r.invoice_id, r.total_amount || r.amount).map(rm => {
+                                    const phone = r.whatsapp.replace(/^0/, '62');
+                                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(rm.msg)}`;
+                                    return (
+                                      <a key={rm.label} href={url} target="_blank" rel="noopener noreferrer"
+                                        title={rm.title}
+                                        data-testid={`wa-reminder-${rm.label}-${r.id}`}
+                                        className="inline-flex items-center justify-center w-6 h-6 rounded bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold transition-colors">
+                                        {rm.label}
+                                      </a>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
                           </td>

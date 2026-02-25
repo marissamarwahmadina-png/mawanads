@@ -733,22 +733,50 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_db_client():
     try:
-        # Test the connection
         await client.admin.command('ping')
         logger.info("Successfully connected to MongoDB")
         
-        # Create indexes for better performance
         try:
             await db.contacts.create_index([("submittedAt", -1)])
             await db.affiliate_leads.create_index([("submittedAt", -1)])
             await db.affiliate_leads.create_index([("affiliator", 1)])
+            await db.webinar_registrants.create_index([("invoice_id", 1)])
+            await db.webinar_registrants.create_index([("event_id", 1)])
             logger.info("MongoDB indexes created successfully")
         except Exception as e:
             logger.warning(f"Failed to create indexes: {str(e)}")
+        
+        # Seed webinar event if not exists
+        try:
+            existing = await db.webinar_events.find_one({"slug": "psikologi-sedekah"})
+            if not existing:
+                seed_event = {
+                    "id": str(uuid.uuid4()),
+                    "title": "Psikologi Sedekah: Rahasia CTA Donasi yang Bikin Donor Auto-Transfer",
+                    "slug": "psikologi-sedekah",
+                    "start_datetime": "2026-03-11T03:00:00Z",
+                    "duration_minutes": 120,
+                    "capacity_total": 100,
+                    "ticket_prices": {
+                        "individu": {"label": "Daftar Individu", "original_price": 300000, "price": 85000, "persons": 1},
+                        "duo": {"label": "Daftar 2 Orang", "original_price": 600000, "price": 149000, "persons": 2},
+                        "lembaga": {"label": "Daftar 1 Lembaga (3 Orang)", "original_price": 900000, "price": 199000, "persons": 3}
+                    },
+                    "countdown_enabled": True,
+                    "bonus_deadline_datetime": "2026-03-09T16:59:00Z",
+                    "status": "active",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.webinar_events.insert_one(seed_event)
+                logger.info("Webinar event 'psikologi-sedekah' seeded successfully")
+            else:
+                logger.info("Webinar event 'psikologi-sedekah' already exists")
+        except Exception as e:
+            logger.warning(f"Failed to seed webinar event: {str(e)}")
             
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {str(e)}")
-        # Don't raise - let app start but log the error
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

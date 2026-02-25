@@ -157,7 +157,9 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <AdminNav />
+      <div className="py-6">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
@@ -167,14 +169,7 @@ export const AdminDashboard = () => {
             <p className="text-gray-500">Pantau performa lead dan affiliator</p>
           </div>
           <div className="flex gap-3">
-            <Button data-testid="nav-contacts-btn" onClick={() => navigate('/admin/contact')} className="bg-cyan-500 hover:bg-cyan-600 text-white">
-              <Database className="mr-2" size={18} />Database Kontak
-            </Button>
             <Button data-testid="refresh-btn" onClick={fetchData} variant="outline"><RefreshCw className="mr-2" size={18} />Refresh</Button>
-            <Button data-testid="home-btn" onClick={() => window.location.href = '/'} variant="outline">Home</Button>
-            <Button data-testid="logout-btn" onClick={handleLogout} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
-              <LogOut className="mr-2" size={18} />Logout
-            </Button>
           </div>
         </div>
 

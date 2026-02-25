@@ -49,6 +49,7 @@ const WebinarConfirmation = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <MetaPixel pixelId={WEBINAR_PIXEL_ID} />
       <div className="max-w-lg w-full">
         {isPaid ? (
           <Card className="bg-white/95 shadow-2xl" data-testid="confirmation-paid">

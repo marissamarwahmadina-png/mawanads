@@ -392,6 +392,18 @@ export const AdminContacts = () => {
                       <div className="border-t mt-4 pt-4 flex gap-3">
                         <Button data-testid={`lead-whatsapp-${lead.id}`} onClick={() => window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`, '_blank')} className="bg-green-500 hover:bg-green-600 text-white" size="sm">WhatsApp</Button>
                         <Button data-testid={`lead-email-${lead.id}`} onClick={() => window.location.href = `mailto:${lead.email}`} variant="outline" size="sm">Email</Button>
+                        <div className="ml-auto">
+                          {deletingId === `l-${lead.id}` ? (
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="destructive" onClick={() => deleteAffiliateLead(lead.id)} data-testid={`confirm-delete-lead-${lead.id}`}>Hapus</Button>
+                              <Button size="sm" variant="ghost" onClick={() => setDeletingId(null)}>Batal</Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-500" onClick={() => setDeletingId(`l-${lead.id}`)} data-testid={`delete-lead-${lead.id}`}>
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

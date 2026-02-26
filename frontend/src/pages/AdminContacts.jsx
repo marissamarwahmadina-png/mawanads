@@ -20,8 +20,9 @@ export const AdminContacts = () => {
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
   const navigate = useNavigate();
+  const [deletingId, setDeletingId] = useState(null);
 
   const [contactFilters, setContactFilters] = useState({
     name: '', email: '', phone: '', organization: '', startDate: '', endDate: ''

@@ -37,6 +37,22 @@ export const AdminContacts = () => {
     navigate('/admin/login');
   };
 
+  const deleteContact = async (id) => {
+    try {
+      await axios.delete(`${BACKEND_URL}/api/admin/contacts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setDeletingId(null);
+      fetchData();
+    } catch { /* ignore */ }
+  };
+
+  const deleteAffiliateLead = async (id) => {
+    try {
+      await axios.delete(`${BACKEND_URL}/api/admin/affiliate-leads/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setDeletingId(null);
+      fetchData();
+    } catch { /* ignore */ }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);

@@ -90,7 +90,7 @@ class StatusCheckCreate(BaseModel):
 # Contact Form Models
 class ContactCreate(BaseModel):
     name: str
-    email: EmailStr
+    email: str = ""
     phone: str
     organization: Optional[str] = ""
     message: str
@@ -113,7 +113,7 @@ class Contact(BaseModel):
 # Affiliate Lead Models
 class AffiliateLeadCreate(BaseModel):
     name: str
-    email: EmailStr
+    email: str = ""
     phone: str
     organization: str
     monthly_ad_spend: str

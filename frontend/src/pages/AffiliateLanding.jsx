@@ -186,7 +186,7 @@ export const AffiliateLanding = () => {
                     <Label htmlFor="email" className="flex items-center space-x-2 text-slate-700">
                       <Mail size={15} /><span>Email *</span>
                     </Label>
-                    <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required placeholder="email@example.com" className="mt-2" data-testid="input-email" />
+                    <Input id="email" name="email" type="text" value={formData.email} onChange={handleChange} placeholder="email@example.com" className="mt-2" data-testid="input-email" />
                   </div>
                   <div>
                     <Label htmlFor="phone" className="flex items-center space-x-2 text-slate-700">

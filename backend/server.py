@@ -711,6 +711,20 @@ async def admin_delete_registrant(registrant_id: str):
         raise HTTPException(status_code=404, detail="Registrant tidak ditemukan")
     return {"success": True}
 
+@api_router.delete("/admin/contacts/{contact_id}")
+async def admin_delete_contact(contact_id: str):
+    result = await db.contacts.delete_one({"id": contact_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Contact tidak ditemukan")
+    return {"success": True}
+
+@api_router.delete("/admin/affiliate-leads/{lead_id}")
+async def admin_delete_affiliate_lead(lead_id: str):
+    result = await db.affiliate_leads.delete_one({"id": lead_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Lead tidak ditemukan")
+    return {"success": True}
+
 # Include the router in the main app
 app.include_router(api_router)
 

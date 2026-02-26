@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Mail, Phone, Building, Calendar, User, MessageSquare, RefreshCw, DollarSign, UserCheck, Download, Filter, BarChart3 } from 'lucide-react';
+import { Mail, Phone, Building, Calendar, User, MessageSquare, RefreshCw, DollarSign, UserCheck, Download, Filter, BarChart3, Trash2 } from 'lucide-react';
 import AdminNav from '../components/AdminNav';
 import * as XLSX from 'xlsx';
 import { format, parseISO } from 'date-fns';

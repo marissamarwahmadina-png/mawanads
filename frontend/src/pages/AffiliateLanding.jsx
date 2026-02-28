@@ -124,41 +124,6 @@ export const AffiliateLanding = () => {
         </div>
       </section>
 
-      {/* Problem & Solution Section */}
-      <section className="bg-slate-800/50 border-y border-slate-700/30">
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-8 md:p-10 mb-10">
-              <p className="text-slate-300 text-lg leading-relaxed mb-6">
-                Banyak bisnis sudah <span className="text-white font-semibold">besar dari sisi budget</span>,
-                tapi belum kuat dari sisi <span className="text-cyan-400 font-semibold">struktur dan risk management</span>.
-              </p>
-              <p className="text-slate-400 mb-8">Di sesi ini, kita akan membahas:</p>
-
-              <div className="space-y-4">
-                {[
-                  'Struktur akun & risiko banned',
-                  'Celah pemborosan budget',
-                  'Cara scaling tanpa memicu sistem',
-                  'Optimasi performa tanpa gambling',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 size={14} className="text-cyan-400" />
-                    </div>
-                    <span className="text-slate-200">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-center">
-              <p className="text-slate-500 text-sm mb-1">Tanpa komitmen. Tanpa kewajiban kerja sama.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Form Section */}
       <section ref={formRef} className="py-16 md:py-20" id="form-section">
         <div className="container mx-auto px-4">
@@ -183,34 +148,16 @@ export const AffiliateLanding = () => {
                     <Input id="name" name="name" value={formData.name} onChange={handleChange} required placeholder="Nama Anda" className="mt-2" data-testid="input-name" />
                   </div>
                   <div>
-                    <Label htmlFor="email" className="flex items-center space-x-2 text-slate-700">
-                      <Mail size={15} /><span>Email *</span>
-                    </Label>
-                    <Input id="email" name="email" type="text" value={formData.email} onChange={handleChange} placeholder="email@example.com" className="mt-2" data-testid="input-email" />
-                  </div>
-                  <div>
                     <Label htmlFor="phone" className="flex items-center space-x-2 text-slate-700">
-                      <Phone size={15} /><span>Nomor WhatsApp *</span>
+                      <Phone size={15} /><span>Nomor WA Aktif *</span>
                     </Label>
                     <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required placeholder="08xx-xxxx-xxxx" className="mt-2" data-testid="input-phone" />
                   </div>
                   <div>
-                    <Label htmlFor="organization" className="flex items-center space-x-2 text-slate-700">
-                      <Building size={15} /><span>Nama Bisnis/Perusahaan *</span>
-                    </Label>
-                    <Input id="organization" name="organization" value={formData.organization} onChange={handleChange} required placeholder="Nama bisnis atau perusahaan Anda" className="mt-2" data-testid="input-org" />
-                  </div>
-                  <div>
                     <Label htmlFor="monthly_ad_spend" className="flex items-center space-x-2 text-slate-700">
-                      <DollarSign size={15} /><span>Jumlah Spent Ads Per Bulan *</span>
+                      <DollarSign size={15} /><span>Spent Bulanan *</span>
                     </Label>
                     <Input id="monthly_ad_spend" name="monthly_ad_spend" value={formData.monthly_ad_spend} onChange={handleChange} required placeholder="Contoh: Rp 500 juta" className="mt-2" data-testid="input-spend" />
-                  </div>
-                  <div>
-                    <Label htmlFor="message" className="flex items-center space-x-2 text-slate-700">
-                      <MessageSquare size={15} /><span>Pesan/Kebutuhan Anda *</span>
-                    </Label>
-                    <Textarea id="message" name="message" value={formData.message} onChange={handleChange} required placeholder="Ceritakan kebutuhan campaign digital Anda..." rows={4} className="mt-2" data-testid="input-message" />
                   </div>
 
                   <Button

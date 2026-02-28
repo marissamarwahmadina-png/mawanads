@@ -546,7 +546,11 @@ async def create_tripay_payment(req: CreatePaymentRequest):
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }})
                 return {"success": True, "data": tx}
-            raise HTTPException(status_code=400, detail=data.get("message", "Gagal membuat pembayaran"))
+            error_msg = data.get("message", "Gagal membuat pembayaran")
+            if "Unauthorized IP" in str(error_msg):
+                logger.error(f"TriPay IP not whitelisted: {error_msg}")
+                raise HTTPException(status_code=400, detail=f"IP server belum di-whitelist di TriPay. {error_msg}")
+            raise HTTPException(status_code=400, detail=error_msg)
     except HTTPException:
         raise
     except Exception as e:

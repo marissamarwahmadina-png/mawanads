@@ -461,21 +461,33 @@ async def get_registrant_by_invoice(invoice_id: str):
         raise HTTPException(status_code=404, detail="Invoice tidak ditemukan")
     return reg
 
+FALLBACK_CHANNELS = [
+    {"group": "Virtual Account", "code": "BRIVA", "name": "BRI Virtual Account", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0}},
+    {"group": "Virtual Account", "code": "BNIVA", "name": "BNI Virtual Account", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0}},
+    {"group": "Virtual Account", "code": "MANDIRIVA", "name": "Mandiri Virtual Account", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0}},
+    {"group": "Virtual Account", "code": "BCAVA", "name": "BCA Virtual Account", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0}},
+    {"group": "Virtual Account", "code": "PERMATAVA", "name": "Permata Virtual Account", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0}},
+    {"group": "E-Wallet", "code": "QRIS", "name": "QRIS (OVO, GoPay, Dana)", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0.7}},
+    {"group": "E-Wallet", "code": "QRISC", "name": "QRIS (Customizable)", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0.7}},
+    {"group": "E-Wallet", "code": "OVO", "name": "OVO", "active": True, "icon_url": "", "total_fee": {"flat": 0, "percent": 0}},
+]
+
 @api_router.get("/webinar/payment-channels")
 async def get_payment_channels():
     if not TRIPAY_API_KEY:
-        return {"channels": []}
+        return {"channels": FALLBACK_CHANNELS, "fallback": True}
     try:
         base_url = get_tripay_base_url()
-        async with httpx.AsyncClient() as hc:
+        async with httpx.AsyncClient(timeout=10) as hc:
             resp = await hc.get(f"{base_url}/merchant/payment-channel", headers={"Authorization": f"Bearer {TRIPAY_API_KEY}"})
             data = resp.json()
             if data.get("success"):
-                return {"channels": data["data"]}
-            return {"channels": []}
+                return {"channels": data["data"], "fallback": False}
+            logger.warning(f"TriPay channel response: {data.get('message', 'unknown error')}")
+            return {"channels": FALLBACK_CHANNELS, "fallback": True}
     except Exception as e:
         logger.error(f"TriPay channel error: {e}")
-        return {"channels": []}
+        return {"channels": FALLBACK_CHANNELS, "fallback": True}
 
 class CreatePaymentRequest(BaseModel):
     invoice_id: str

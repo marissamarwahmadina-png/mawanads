@@ -155,6 +155,17 @@ async def root_health_check():
     """Health check endpoint for Kubernetes probes (without /api prefix)"""
     return {"status": "healthy", "service": "mawana-api"}
 
+@api_router.get("/server-info")
+async def server_info():
+    """Show server IP for TriPay whitelist configuration"""
+    try:
+        async with httpx.AsyncClient(timeout=5) as hc:
+            resp = await hc.get("https://api.ipify.org?format=json")
+            ip = resp.json().get("ip", "unknown")
+    except Exception:
+        ip = "gagal deteksi"
+    return {"server_ip": ip, "note": "Tambahkan IP ini ke whitelist TriPay di https://tripay.co.id/member"}
+
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint for Kubernetes"""

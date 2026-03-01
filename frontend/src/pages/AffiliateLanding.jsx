@@ -129,7 +129,7 @@ export const AffiliateLanding = () => {
           <div className="max-w-xl mx-auto">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 text-cyan-400 mb-3">
-                <Mail size={18} />
+                <Phone size={18} />
                 <span className="text-sm font-semibold tracking-wider uppercase">Dapatkan Konsultasi Gratis</span>
               </div>
               <p className="text-slate-400">

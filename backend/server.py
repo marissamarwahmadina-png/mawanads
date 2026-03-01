@@ -115,12 +115,12 @@ class AffiliateLeadCreate(BaseModel):
     name: str
     email: str = ""
     phone: str
-    organization: str
-    monthly_ad_spend: str
-    message: str
+    organization: str = ""
+    monthly_ad_spend: str = ""
+    message: str = ""
     affiliator: str
     
-    @validator('name', 'phone', 'organization', 'monthly_ad_spend', 'message')
+    @validator('name', 'phone')
     def check_not_empty(cls, v):
         if not v or not v.strip():
             raise ValueError('Field tidak boleh kosong')

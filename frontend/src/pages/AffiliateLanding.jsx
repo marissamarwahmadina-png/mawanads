@@ -24,7 +24,7 @@ export const AffiliateLanding = () => {
   const formRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    name: '', email: '', phone: '', organization: '', monthly_ad_spend: '', message: ''
+    name: '', phone: '', monthly_ad_spend: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

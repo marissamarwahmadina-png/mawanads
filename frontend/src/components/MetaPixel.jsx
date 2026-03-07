@@ -55,8 +55,8 @@ export const trackMetaEvent = (eventName, parameters = {}) => {
 };
 
 // Common events helper
-export const trackLead = (value = 0, currency = 'IDR') => {
-  trackMetaEvent('Lead', { value, currency });
+export const trackLead = (value = 1.00, currency = 'IDR') => {
+  trackMetaEvent('Lead', { value: parseFloat(value) || 1.00, currency });
 };
 
 export const trackCompleteRegistration = () => {
@@ -67,8 +67,8 @@ export const trackSubmitApplication = () => {
   trackMetaEvent('SubmitApplication');
 };
 
-export const trackPurchase = (value = 0, currency = 'IDR') => {
-  trackMetaEvent('Purchase', { value, currency });
+export const trackPurchase = (value = 1.00, currency = 'IDR') => {
+  trackMetaEvent('Purchase', { value: parseFloat(value) || 1.00, currency });
 };
 
 export default MetaPixel;

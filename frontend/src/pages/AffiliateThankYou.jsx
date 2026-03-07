@@ -16,7 +16,7 @@ const AffiliateThankYou = () => {
   const pixelId = AFFILIATOR_PIXELS[affiliator?.toLowerCase()] || AFFILIATOR_PIXELS['default'];
 
   useEffect(() => {
-    trackMetaEvent('Purchase', { value: 0, currency: 'IDR' });
+    trackMetaEvent('Purchase', { value: 1.00, currency: 'IDR' });
   }, []);
 
   return (

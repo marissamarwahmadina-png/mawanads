@@ -48,6 +48,14 @@ export const AffiliateLanding = () => {
       const submitData = { ...formData, affiliator: affiliator || 'direct' };
       const response = await axios.post(`${BACKEND_URL}/api/affiliate-lead`, submitData);
       if (response.data.success) {
+        // Re-init pixel with Advanced Matching data for higher accuracy
+        if (window.fbq) {
+          window.fbq('init', pixelId, {
+            ph: formData.phone.replace(/\D/g, ''),
+            fn: formData.name.split(' ')[0]?.toLowerCase(),
+            ln: formData.name.split(' ').slice(1).join(' ')?.toLowerCase(),
+          });
+        }
         toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
         navigate(`/affiliate/${affiliator}/thankyou`);
       }

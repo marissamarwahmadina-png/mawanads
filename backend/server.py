@@ -158,6 +158,9 @@ class WhitelistUserCreate(BaseModel):
     cashback_percentage: float = 10.0
     referral: str = ""
     notes: str = ""
+    bank_name: str = ""
+    account_name: str = ""
+    account_number: str = ""
 
 class WhitelistUserUpdate(BaseModel):
     name: Optional[str] = None
@@ -166,6 +169,9 @@ class WhitelistUserUpdate(BaseModel):
     cashback_percentage: Optional[float] = None
     referral: Optional[str] = None
     notes: Optional[str] = None
+    bank_name: Optional[str] = None
+    account_name: Optional[str] = None
+    account_number: Optional[str] = None
 
 class MonthlySpendCreate(BaseModel):
     month: int
@@ -803,6 +809,9 @@ async def create_whitelist_user(data: WhitelistUserCreate):
         "cashback_percentage": data.cashback_percentage,
         "referral": data.referral,
         "notes": data.notes,
+        "bank_name": data.bank_name,
+        "account_name": data.account_name,
+        "account_number": data.account_number,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -1076,6 +1085,36 @@ async def get_whitelist_summary():
         referrals[ref]["total_spend"] += u.get("total_spend", 0)
         referrals[ref]["total_cashback"] += u.get("total_cashback", 0)
     return {"users": result, "referrals": list(referrals.values()), "total_users": len(users), "total_spend": sum(s.get("total_spend", 0) for s in result), "total_cashback": sum(s.get("total_cashback", 0) for s in result)}
+
+@api_router.get("/admin/whitelist/spends/monthly")
+async def get_monthly_spends_all(month: int, year: int):
+    """Get all spends for a given month/year, merged with all whitelist users"""
+    users = await db.whitelist_users.find({}, {"_id": 0}).sort("name", 1).to_list(10000)
+    spends = await db.monthly_spends.find({"month": month, "year": year}, {"_id": 0}).to_list(10000)
+    spend_map = {s["user_id"]: s for s in spends}
+    result = []
+    for u in users:
+        s = spend_map.get(u["id"])
+        result.append({
+            "user_id": u["id"],
+            "user_name": u["name"],
+            "email": u.get("email", ""),
+            "phone": u.get("phone", ""),
+            "referral": u.get("referral", ""),
+            "cashback_percentage": u.get("cashback_percentage", 0),
+            "bank_name": u.get("bank_name", ""),
+            "account_name": u.get("account_name", ""),
+            "account_number": u.get("account_number", ""),
+            "spend_id": s["id"] if s else None,
+            "spend_amount": s.get("spend_amount", 0) if s else 0,
+            "cashback_amount": s.get("cashback_amount", 0) if s else 0,
+            "proof_url": s.get("proof_url", "") if s else "",
+            "notes": s.get("notes", "") if s else "",
+            "has_data": s is not None,
+        })
+    total_spend = sum(r["spend_amount"] for r in result)
+    total_cashback = sum(r["cashback_amount"] for r in result)
+    return {"month": month, "year": year, "data": result, "total_spend": total_spend, "total_cashback": total_cashback}
 
 # Include the router in the main app
 app.include_router(api_router)

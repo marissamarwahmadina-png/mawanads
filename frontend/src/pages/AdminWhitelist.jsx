@@ -50,6 +50,7 @@ function Field({ label, children }) {
 function UserForm({ user, onSave, onCancel, saving }) {
   const [form, setForm] = useState({
     name: '', email: '', phone: '', cashback_percentage: 10, referral: '', notes: '',
+    bank_name: '', account_name: '', account_number: '',
     ...(user || {})
   });
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
@@ -60,6 +61,10 @@ function UserForm({ user, onSave, onCancel, saving }) {
       <Field label="Telepon / WhatsApp"><Input data-testid="wl-form-phone" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="08xxxxxxxxxx" /></Field>
       <Field label="Cashback (%)"><Input data-testid="wl-form-cb" type="number" min={0} max={100} step={0.1} value={form.cashback_percentage} onChange={e => set('cashback_percentage', parseFloat(e.target.value) || 0)} /></Field>
       <Field label="Referral"><Input data-testid="wl-form-referral" value={form.referral} onChange={e => set('referral', e.target.value)} placeholder="Nama referral / affiliate" /></Field>
+      <div className="border-t pt-3 mt-3 mb-1"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Informasi Rekening</p></div>
+      <Field label="Nama Bank"><Input data-testid="wl-form-bank" value={form.bank_name} onChange={e => set('bank_name', e.target.value)} placeholder="BCA, BRI, Mandiri, dll" /></Field>
+      <Field label="Nama Rekening"><Input data-testid="wl-form-account-name" value={form.account_name} onChange={e => set('account_name', e.target.value)} placeholder="Nama pemilik rekening" /></Field>
+      <Field label="Nomor Rekening"><Input data-testid="wl-form-account-number" value={form.account_number} onChange={e => set('account_number', e.target.value)} placeholder="Nomor rekening" /></Field>
       <Field label="Catatan"><Input data-testid="wl-form-notes" value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Catatan opsional" /></Field>
       <div className="flex gap-2 pt-2">
         <Button data-testid="wl-form-save" disabled={saving || !form.name.trim()} onClick={() => onSave(form)} className="bg-cyan-600 hover:bg-cyan-700 text-white flex-1">
@@ -246,6 +251,7 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
             <span className="text-gray-500">Tel: <b className="text-gray-700">{user.phone || '-'}</b></span>
             <span className="text-gray-300">|</span>
             <span className="text-gray-500">Email: <b className="text-gray-700">{user.email || '-'}</b></span>
+            {user.bank_name && <><span className="text-gray-300">|</span><span className="text-gray-500">Bank: <b className="text-gray-700">{user.bank_name} - {user.account_name} ({user.account_number})</b></span></>}
             {user.notes && <><span className="text-gray-300">|</span><span className="text-gray-500">Note: {user.notes}</span></>}
             <div className="ml-auto flex gap-1">
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleDownloadPdf()} data-testid={`pdf-user-${user.id}`}>

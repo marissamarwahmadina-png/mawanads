@@ -2,13 +2,14 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
-import { BarChart3, Users, Ticket, LogOut, Home, Shield } from 'lucide-react';
+import { BarChart3, Users, Ticket, LogOut, Home, Shield, ClipboardList } from 'lucide-react';
 
 const navItems = [
   { path: '/admin/dashboard', label: 'Analytics', icon: BarChart3 },
   { path: '/admin/contact', label: 'Leads & Kontak', icon: Users },
   { path: '/admin/webinar', label: 'Webinar', icon: Ticket },
   { path: '/admin/whitelist', label: 'Whitelist CB', icon: Shield },
+  { path: '/admin/whitelist/spends', label: 'Input Spending', icon: ClipboardList },
 ];
 
 export default function AdminNav() {
@@ -25,7 +26,7 @@ export default function AdminNav() {
             Mawana Admin
           </button>
           {navItems.map(item => {
-            const active = location.pathname === item.path;
+            const active = location.pathname === item.path || (item.path !== '/admin/whitelist' && location.pathname.startsWith(item.path));
             return (
               <button key={item.path} onClick={() => navigate(item.path)}
                 data-testid={`admin-nav-${item.label.toLowerCase().replace(/\s/g, '-')}`}

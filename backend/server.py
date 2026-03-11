@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,7 +14,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 import resend
-
+import shutil
 
 import hashlib
 import hmac
@@ -22,6 +23,10 @@ import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Upload directory for proof of payment files
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'mawana-secret-key-change-in-production')
@@ -144,6 +149,35 @@ class AdminLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# Whitelist Cashback Models
+class WhitelistUserCreate(BaseModel):
+    name: str
+    email: str = ""
+    phone: str = ""
+    cashback_percentage: float = 10.0
+    referral: str = ""
+    notes: str = ""
+
+class WhitelistUserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    cashback_percentage: Optional[float] = None
+    referral: Optional[str] = None
+    notes: Optional[str] = None
+
+class MonthlySpendCreate(BaseModel):
+    month: int
+    year: int
+    spend_amount: float = 0
+    notes: str = ""
+
+class MonthlySpendUpdate(BaseModel):
+    month: Optional[int] = None
+    year: Optional[int] = None
+    spend_amount: Optional[float] = None
+    notes: Optional[str] = None
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -752,6 +786,297 @@ async def admin_delete_affiliate_lead(lead_id: str):
         raise HTTPException(status_code=404, detail="Lead tidak ditemukan")
     return {"success": True}
 
+## ============== WHITELIST CASHBACK ROUTES ==============
+
+@api_router.get("/admin/whitelist")
+async def get_whitelist_users():
+    users = await db.whitelist_users.find({}, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    return users
+
+@api_router.post("/admin/whitelist")
+async def create_whitelist_user(data: WhitelistUserCreate):
+    user_doc = {
+        "id": str(uuid.uuid4()),
+        "name": data.name,
+        "email": data.email,
+        "phone": data.phone,
+        "cashback_percentage": data.cashback_percentage,
+        "referral": data.referral,
+        "notes": data.notes,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.whitelist_users.insert_one(user_doc)
+    return {"success": True, "data": {k: v for k, v in user_doc.items() if k != "_id"}}
+
+@api_router.put("/admin/whitelist/{user_id}")
+async def update_whitelist_user(user_id: str, data: WhitelistUserUpdate):
+    update = {k: v for k, v in data.model_dump(exclude_none=True).items()}
+    if not update:
+        raise HTTPException(status_code=400, detail="Tidak ada data untuk diupdate")
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.whitelist_users.update_one({"id": user_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    return {"success": True}
+
+@api_router.delete("/admin/whitelist/{user_id}")
+async def delete_whitelist_user(user_id: str):
+    result = await db.whitelist_users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    await db.monthly_spends.delete_many({"user_id": user_id})
+    return {"success": True}
+
+@api_router.get("/admin/whitelist/{user_id}/spends")
+async def get_user_spends(user_id: str):
+    spends = await db.monthly_spends.find({"user_id": user_id}, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(10000)
+    return spends
+
+@api_router.post("/admin/whitelist/{user_id}/spends")
+async def create_monthly_spend(user_id: str, data: MonthlySpendCreate):
+    user = await db.whitelist_users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    existing = await db.monthly_spends.find_one({"user_id": user_id, "month": data.month, "year": data.year})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Data spending bulan {data.month}/{data.year} sudah ada")
+    cashback_pct = user.get("cashback_percentage", 10)
+    cashback_amount = data.spend_amount * (cashback_pct / 100)
+    spend_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "month": data.month,
+        "year": data.year,
+        "spend_amount": data.spend_amount,
+        "cashback_percentage": cashback_pct,
+        "cashback_amount": cashback_amount,
+        "proof_url": "",
+        "notes": data.notes,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.monthly_spends.insert_one(spend_doc)
+    return {"success": True, "data": {k: v for k, v in spend_doc.items() if k != "_id"}}
+
+@api_router.put("/admin/whitelist/spends/{spend_id}")
+async def update_monthly_spend(spend_id: str, data: MonthlySpendUpdate):
+    update = {k: v for k, v in data.model_dump(exclude_none=True).items()}
+    if not update:
+        raise HTTPException(status_code=400, detail="Tidak ada data untuk diupdate")
+    spend = await db.monthly_spends.find_one({"id": spend_id}, {"_id": 0})
+    if not spend:
+        raise HTTPException(status_code=404, detail="Spend tidak ditemukan")
+    if "spend_amount" in update:
+        user = await db.whitelist_users.find_one({"id": spend["user_id"]}, {"_id": 0})
+        pct = user.get("cashback_percentage", 10) if user else 10
+        update["cashback_amount"] = update["spend_amount"] * (pct / 100)
+        update["cashback_percentage"] = pct
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.monthly_spends.update_one({"id": spend_id}, {"$set": update})
+    return {"success": True}
+
+@api_router.delete("/admin/whitelist/spends/{spend_id}")
+async def delete_monthly_spend(spend_id: str):
+    result = await db.monthly_spends.delete_one({"id": spend_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Spend tidak ditemukan")
+    return {"success": True}
+
+@api_router.post("/admin/whitelist/spends/{spend_id}/proof")
+async def upload_proof_of_payment(spend_id: str, file: UploadFile = File(...)):
+    spend = await db.monthly_spends.find_one({"id": spend_id}, {"_id": 0})
+    if not spend:
+        raise HTTPException(status_code=404, detail="Spend tidak ditemukan")
+    ext = Path(file.filename).suffix if file.filename else ".jpg"
+    filename = f"proof_{spend_id}{ext}"
+    filepath = UPLOAD_DIR / filename
+    with open(filepath, "wb") as f:
+        content = await file.read()
+        f.write(content)
+    proof_url = f"/api/admin/whitelist/uploads/{filename}"
+    await db.monthly_spends.update_one({"id": spend_id}, {"$set": {"proof_url": proof_url, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    return {"success": True, "proof_url": proof_url}
+
+@api_router.get("/admin/whitelist/uploads/{filename}")
+async def serve_upload(filename: str):
+    filepath = UPLOAD_DIR / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    return FileResponse(filepath)
+
+@api_router.get("/admin/whitelist/{user_id}/pdf")
+async def generate_user_pdf(user_id: str):
+    from fpdf import FPDF
+    user = await db.whitelist_users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    spends = await db.monthly_spends.find({"user_id": user_id}, {"_id": 0}).sort([("year", 1), ("month", 1)]).to_list(10000)
+    month_names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "Laporan Cashback", ln=True, align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, f"Tanggal cetak: {datetime.now(timezone.utc).strftime('%d %B %Y')}", ln=True, align="C")
+    pdf.ln(8)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Detail User", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(50, 6, "Nama:", 0)
+    pdf.cell(0, 6, user.get("name", "-"), ln=True)
+    pdf.cell(50, 6, "Email:", 0)
+    pdf.cell(0, 6, user.get("email", "-"), ln=True)
+    pdf.cell(50, 6, "Telepon:", 0)
+    pdf.cell(0, 6, user.get("phone", "-"), ln=True)
+    pdf.cell(50, 6, "Referral:", 0)
+    pdf.cell(0, 6, user.get("referral", "-"), ln=True)
+    pdf.cell(50, 6, "Cashback (%):", 0)
+    pdf.cell(0, 6, f"{user.get('cashback_percentage', 0)}%", ln=True)
+    pdf.ln(6)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Rincian Spending & Cashback", ln=True)
+    pdf.set_font("Helvetica", "B", 9)
+    pdf.set_fill_color(230, 230, 230)
+    pdf.cell(50, 7, "Bulan", 1, 0, "C", True)
+    pdf.cell(45, 7, "Ad Spend (Rp)", 1, 0, "C", True)
+    pdf.cell(25, 7, "CB (%)", 1, 0, "C", True)
+    pdf.cell(45, 7, "Cashback (Rp)", 1, 0, "C", True)
+    pdf.cell(25, 7, "Bukti", 1, 1, "C", True)
+    pdf.set_font("Helvetica", "", 9)
+    total_spend = 0
+    total_cb = 0
+    for s in spends:
+        m = s.get("month", 0)
+        y = s.get("year", 0)
+        label = f"{month_names[m] if 1 <= m <= 12 else m} {y}"
+        spend_amt = s.get("spend_amount", 0)
+        cb_amt = s.get("cashback_amount", 0)
+        total_spend += spend_amt
+        total_cb += cb_amt
+        proof = "Ya" if s.get("proof_url") else "-"
+        pdf.cell(50, 7, label, 1, 0, "L")
+        pdf.cell(45, 7, f"{spend_amt:,.0f}", 1, 0, "R")
+        pdf.cell(25, 7, f"{s.get('cashback_percentage', 0)}%", 1, 0, "C")
+        pdf.cell(45, 7, f"{cb_amt:,.0f}", 1, 0, "R")
+        pdf.cell(25, 7, proof, 1, 1, "C")
+    pdf.set_font("Helvetica", "B", 9)
+    pdf.cell(50, 7, "TOTAL", 1, 0, "C", True)
+    pdf.cell(45, 7, f"{total_spend:,.0f}", 1, 0, "R", True)
+    pdf.cell(25, 7, "", 1, 0, "C", True)
+    pdf.cell(45, 7, f"{total_cb:,.0f}", 1, 0, "R", True)
+    pdf.cell(25, 7, "", 1, 1, "C", True)
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.cell(0, 5, "Dokumen ini digenerate secara otomatis oleh Mawana Digital Services", ln=True, align="C")
+    safe_name = user.get("name", "user").replace(" ", "_")
+    pdf_filename = f"cashback_{safe_name}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
+    pdf_path = UPLOAD_DIR / pdf_filename
+    pdf.output(str(pdf_path))
+    return FileResponse(pdf_path, filename=pdf_filename, media_type="application/pdf")
+
+@api_router.get("/admin/whitelist/referral/{referral_name}/pdf")
+async def generate_referral_pdf(referral_name: str):
+    from fpdf import FPDF
+    users = await db.whitelist_users.find({"referral": referral_name}, {"_id": 0}).to_list(10000)
+    if not users:
+        raise HTTPException(status_code=404, detail="Tidak ada user dengan referral tersebut")
+    user_ids = [u["id"] for u in users]
+    all_spends = await db.monthly_spends.find({"user_id": {"$in": user_ids}}, {"_id": 0}).sort([("year", 1), ("month", 1)]).to_list(100000)
+    spend_map = {}
+    for s in all_spends:
+        uid = s["user_id"]
+        if uid not in spend_map:
+            spend_map[uid] = []
+        spend_map[uid].append(s)
+    month_names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, f"Laporan Cashback - Referral: {referral_name}", ln=True, align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, f"Tanggal cetak: {datetime.now(timezone.utc).strftime('%d %B %Y')}", ln=True, align="C")
+    pdf.ln(6)
+    grand_total_spend = 0
+    grand_total_cb = 0
+    for user in users:
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 8, f"{user['name']} ({user.get('email', '-')}) - CB: {user.get('cashback_percentage', 0)}%", ln=True)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_fill_color(230, 230, 230)
+        pdf.cell(50, 7, "Bulan", 1, 0, "C", True)
+        pdf.cell(45, 7, "Ad Spend (Rp)", 1, 0, "C", True)
+        pdf.cell(25, 7, "CB (%)", 1, 0, "C", True)
+        pdf.cell(45, 7, "Cashback (Rp)", 1, 1, "C", True)
+        pdf.set_font("Helvetica", "", 9)
+        user_spends = spend_map.get(user["id"], [])
+        user_total_spend = 0
+        user_total_cb = 0
+        for s in user_spends:
+            m = s.get("month", 0)
+            y = s.get("year", 0)
+            label = f"{month_names[m] if 1 <= m <= 12 else m} {y}"
+            spend_amt = s.get("spend_amount", 0)
+            cb_amt = s.get("cashback_amount", 0)
+            user_total_spend += spend_amt
+            user_total_cb += cb_amt
+            pdf.cell(50, 7, label, 1, 0, "L")
+            pdf.cell(45, 7, f"{spend_amt:,.0f}", 1, 0, "R")
+            pdf.cell(25, 7, f"{s.get('cashback_percentage', 0)}%", 1, 0, "C")
+            pdf.cell(45, 7, f"{cb_amt:,.0f}", 1, 1, "R")
+        if not user_spends:
+            pdf.set_font("Helvetica", "I", 9)
+            pdf.cell(165, 7, "Belum ada data spending", 1, 1, "C")
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.cell(50, 7, "Subtotal", 1, 0, "C", True)
+        pdf.cell(45, 7, f"{user_total_spend:,.0f}", 1, 0, "R", True)
+        pdf.cell(25, 7, "", 1, 0, "C", True)
+        pdf.cell(45, 7, f"{user_total_cb:,.0f}", 1, 1, "R", True)
+        grand_total_spend += user_total_spend
+        grand_total_cb += user_total_cb
+        pdf.ln(4)
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_fill_color(200, 220, 255)
+    pdf.cell(95, 8, "GRAND TOTAL", 1, 0, "C", True)
+    pdf.cell(35, 8, f"Rp {grand_total_spend:,.0f}", 1, 0, "R", True)
+    pdf.cell(35, 8, f"Rp {grand_total_cb:,.0f}", 1, 1, "R", True)
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.cell(0, 5, "Dokumen ini digenerate secara otomatis oleh Mawana Digital Services", ln=True, align="C")
+    safe_ref = referral_name.replace(" ", "_")
+    pdf_filename = f"cashback_referral_{safe_ref}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
+    pdf_path = UPLOAD_DIR / pdf_filename
+    pdf.output(str(pdf_path))
+    return FileResponse(pdf_path, filename=pdf_filename, media_type="application/pdf")
+
+@api_router.get("/admin/whitelist/summary")
+async def get_whitelist_summary():
+    users = await db.whitelist_users.find({}, {"_id": 0}).to_list(10000)
+    all_spends = await db.monthly_spends.find({}, {"_id": 0}).to_list(100000)
+    spend_map = {}
+    for s in all_spends:
+        uid = s["user_id"]
+        if uid not in spend_map:
+            spend_map[uid] = {"total_spend": 0, "total_cashback": 0, "months": 0}
+        spend_map[uid]["total_spend"] += s.get("spend_amount", 0)
+        spend_map[uid]["total_cashback"] += s.get("cashback_amount", 0)
+        spend_map[uid]["months"] += 1
+    result = []
+    for u in users:
+        uid = u["id"]
+        stats = spend_map.get(uid, {"total_spend": 0, "total_cashback": 0, "months": 0})
+        result.append({**u, **stats})
+    referrals = {}
+    for u in result:
+        ref = u.get("referral", "") or "Tidak ada"
+        if ref not in referrals:
+            referrals[ref] = {"referral": ref, "users": 0, "total_spend": 0, "total_cashback": 0}
+        referrals[ref]["users"] += 1
+        referrals[ref]["total_spend"] += u.get("total_spend", 0)
+        referrals[ref]["total_cashback"] += u.get("total_cashback", 0)
+    return {"users": result, "referrals": list(referrals.values()), "total_users": len(users), "total_spend": sum(s.get("total_spend", 0) for s in result), "total_cashback": sum(s.get("total_cashback", 0) for s in result)}
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -783,6 +1108,8 @@ async def startup_db_client():
             await db.affiliate_leads.create_index([("affiliator", 1)])
             await db.webinar_registrants.create_index([("invoice_id", 1)])
             await db.webinar_registrants.create_index([("event_id", 1)])
+            await db.whitelist_users.create_index([("referral", 1)])
+            await db.monthly_spends.create_index([("user_id", 1)])
             logger.info("MongoDB indexes created successfully")
         except Exception as e:
             logger.warning(f"Failed to create indexes: {str(e)}")

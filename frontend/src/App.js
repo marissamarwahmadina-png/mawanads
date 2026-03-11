@@ -13,6 +13,7 @@ import WebinarLanding from "./pages/WebinarLanding";
 import WebinarPayment from "./pages/WebinarPayment";
 import WebinarConfirmation from "./pages/WebinarConfirmation";
 import AdminWebinar from "./pages/AdminWebinar";
+import AdminWhitelist from "./pages/AdminWhitelist";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -47,6 +48,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminWebinar />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/whitelist"
+              element={
+                <ProtectedRoute>
+                  <AdminWhitelist />
                 </ProtectedRoute>
               }
             />

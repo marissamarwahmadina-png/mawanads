@@ -16,24 +16,30 @@ Landing page & digital services platform untuk "Mawana Digital Services" dengan 
 - 3 Tier tiket: Individu Rp85k, Duo Rp149k, Lembaga Rp199k
 - TriPay payment integration (LIVE - 15 channels: VA + E-Wallet)
 - Email konfirmasi otomatis saat pembayaran berhasil (via Resend)
-- Error handling: toast feedback jika event gagal dimuat, retry button
 
 ### Admin System (Completed)
-- Unified navigation bar: Analytics | Leads & Kontak | Webinar | Whitelist CB
+- Unified navigation bar: Analytics | Leads & Kontak | Webinar | Whitelist CB | Input Spending
 - Satu login untuk akses semua fitur admin
 - Webinar Manager: Dashboard, Registrant (search/filter/export/edit status/delete), Callback Logs
-- Delete registrant dengan konfirmasi inline
 
 ### Whitelist Cashback Dashboard (Completed - March 2026)
 - Dashboard di /admin/whitelist dengan statistik ringkasan
 - CRUD user whitelist (nama, email, telepon, cashback %, referral, catatan)
+- Informasi rekening: Nama Bank, Nama Rekening, Nomor Rekening
 - Tracking ad spend bulanan per user dengan auto-kalkulasi cashback
 - Upload bukti pembayaran (proof of payment) per entry spend
-- Generate PDF laporan cashback per user individu
-- Generate PDF laporan cashback per referral (gabungan semua user satu referral)
+- Generate PDF laporan cashback per user dan per referral
 - Ringkasan per referral dengan tabel agregasi
 - Filter & pencarian user (nama/email/telepon + dropdown referral)
-- Validasi duplikasi spend (bulan/tahun yang sama tidak bisa diinput ulang)
+
+### Input Spending Bulanan (Completed - March 2026)
+- Halaman dedicated di /admin/whitelist/spends
+- Month/year picker dengan navigasi prev/next
+- Tabel semua user whitelist dengan inline edit spend
+- Auto-kalkulasi cashback berdasarkan persentase user
+- Bar chart perbandingan ad spend per user
+- Upload bukti transfer per entry
+- Stats cards: Total Spend & Total Cashback per bulan
 
 ### Legal Pages (Completed)
 - /ketentuan-layanan, /kebijakan-privasi
@@ -44,8 +50,8 @@ Landing page & digital services platform untuk "Mawana Digital Services" dengan 
 - Auth: JWT | Payment: TriPay (production, T48843)
 
 ## DB Collections
-- contacts, affiliate_leads, webinar_events, webinar_registrants, tripay_callback_logs, admin_users
-- whitelist_users: {id, name, email, phone, cashback_percentage, referral, notes, created_at, updated_at}
+- contacts, affiliate_leads, webinar_events, webinar_registrants, tripay_callback_logs
+- whitelist_users: {id, name, email, phone, cashback_percentage, referral, notes, bank_name, account_name, account_number, created_at, updated_at}
 - monthly_spends: {id, user_id, month, year, spend_amount, cashback_percentage, cashback_amount, proof_url, notes, created_at, updated_at}
 
 ## Pending / Backlog

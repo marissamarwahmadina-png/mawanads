@@ -16,7 +16,12 @@ const AffiliateThankYou = () => {
   const pixelId = AFFILIATOR_PIXELS[affiliator?.toLowerCase()] || AFFILIATOR_PIXELS['default'];
 
   useEffect(() => {
-    trackMetaEvent('Purchase', { value: 1.00, currency: 'IDR' });
+    // Only fire Purchase if user actually submitted the form (flag set in AffiliateLanding)
+    const submitted = sessionStorage.getItem('affiliate_form_submitted');
+    if (submitted) {
+      trackMetaEvent('Purchase', { value: 1.00, currency: 'IDR' });
+      sessionStorage.removeItem('affiliate_form_submitted');
+    }
   }, []);
 
   return (

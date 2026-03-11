@@ -48,6 +48,8 @@ export const AffiliateLanding = () => {
       const submitData = { ...formData, affiliator: affiliator || 'direct' };
       const response = await axios.post(`${BACKEND_URL}/api/affiliate-lead`, submitData);
       if (response.data.success) {
+        // Set flag for ThankYou page to fire Purchase pixel
+        sessionStorage.setItem('affiliate_form_submitted', 'true');
         // Re-init pixel with Advanced Matching data for higher accuracy
         if (window.fbq) {
           window.fbq('init', pixelId, {

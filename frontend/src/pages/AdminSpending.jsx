@@ -6,11 +6,12 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import {
   RefreshCw, DollarSign, TrendingUp, Upload, Check, X,
-  Pencil, ChevronLeft, ChevronRight, Save
+  Pencil, ChevronLeft, ChevronRight, Save, Download
 } from 'lucide-react';
 import AdminNav from '../components/AdminNav';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import * as XLSX from 'xlsx';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -214,6 +215,27 @@ export default function AdminSpending() {
 
   const usersWithData = data.filter(d => d.has_data).length;
 
+  const exportToExcel = () => {
+    const rows = data.map(d => ({
+      'Nama': d.user_name,
+      'Email': d.email,
+      'Referral': d.referral || '-',
+      'CB (%)': d.cashback_percentage,
+      'Ad Spend (Rp)': d.spend_amount || 0,
+      'Cashback (Rp)': d.cashback_amount || 0,
+      'Bukti Transfer': d.proof_url ? 'Ya' : '-',
+      'Bank': d.bank_name || '-',
+      'Nama Rekening': d.account_name || '-',
+      'No Rekening': d.account_number || '-',
+      'Catatan': d.notes || '-',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Spending ${MONTHS[month]} ${year}`);
+    XLSX.writeFile(wb, `Spending_${MONTHS[month]}_${year}.xlsx`);
+    toast.success('File Excel berhasil didownload');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" data-testid="admin-spending-page">
       <AdminNav />
@@ -225,7 +247,10 @@ export default function AdminSpending() {
               <h1 className="text-2xl font-bold text-gray-900" data-testid="spending-page-title">Input Spending Bulanan</h1>
               <p className="text-sm text-gray-500 mt-0.5">Input dan kelola data ad spend per user setiap bulan</p>
             </div>
-            <Button size="sm" variant="outline" onClick={load} data-testid="refresh-spending"><RefreshCw size={14} className="mr-1" />Refresh</Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportToExcel} disabled={data.length === 0} data-testid="export-spending-btn"><Download size={14} className="mr-1" />Export Excel</Button>
+              <Button size="sm" variant="outline" onClick={load} data-testid="refresh-spending"><RefreshCw size={14} className="mr-1" />Refresh</Button>
+            </div>
           </div>
 
           {/* Month/Year Picker */}

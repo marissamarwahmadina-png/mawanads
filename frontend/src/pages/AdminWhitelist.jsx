@@ -6,7 +6,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import {
   Shield, Plus, Pencil, Trash2, RefreshCw, FileText, Upload,
-  ChevronDown, ChevronUp, X, Users, DollarSign, TrendingUp, Download
+  ChevronDown, ChevronUp, X, Users, DollarSign, TrendingUp, Download,
+  CheckCircle, Clock, Filter
 } from 'lucide-react';
 import AdminNav from '../components/AdminNav';
 import { toast } from 'sonner';
@@ -21,11 +22,11 @@ const MONTHS = [
 const fmtRp = (n) => `Rp ${Number(n || 0).toLocaleString('id-ID')}`;
 
 // ─── Modal wrapper ───
-function Modal({ open, onClose, title, children }) {
+function Modal({ open, onClose, title, children, wide }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className={`bg-white rounded-xl shadow-2xl w-full ${wide ? 'max-w-2xl' : 'max-w-lg'} mx-4 max-h-[90vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <h3 className="font-semibold text-gray-900 text-base">{title}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600" data-testid="modal-close"><X size={18} /></button>
@@ -36,7 +37,6 @@ function Modal({ open, onClose, title, children }) {
   );
 }
 
-// ─── Form field ───
 function Field({ label, children }) {
   return (
     <div className="mb-3">
@@ -76,6 +76,124 @@ function UserForm({ user, onSave, onCancel, saving }) {
   );
 }
 
+// ─── PDF Filter Modal ───
+function PdfFilterModal({ open, onClose, onDownload, referralName }) {
+  const now = new Date();
+  const [mode, setMode] = useState('all');
+  const [fromMonth, setFromMonth] = useState(1);
+  const [fromYear, setFromYear] = useState(now.getFullYear());
+  const [toMonth, setToMonth] = useState(now.getMonth() + 1);
+  const [toYear, setToYear] = useState(now.getFullYear());
+
+  const handleDownload = () => {
+    if (mode === 'all') {
+      onDownload(referralName, 0, 0, 0, 0);
+    } else {
+      onDownload(referralName, fromMonth, fromYear, toMonth, toYear);
+    }
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title={`Download PDF - ${referralName}`}>
+      <div className="space-y-4">
+        <div className="flex gap-3">
+          <button onClick={() => setMode('all')} className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition ${mode === 'all' ? 'bg-cyan-50 border-cyan-300 text-cyan-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`} data-testid="pdf-mode-all">
+            Semua Periode
+          </button>
+          <button onClick={() => setMode('range')} className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition ${mode === 'range' ? 'bg-cyan-50 border-cyan-300 text-cyan-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`} data-testid="pdf-mode-range">
+            Pilih Periode
+          </button>
+        </div>
+        {mode === 'range' && (
+          <div className="space-y-3 p-3 rounded-lg bg-gray-50 border">
+            <p className="text-xs font-medium text-gray-500 uppercase">Dari</p>
+            <div className="grid grid-cols-2 gap-2">
+              <select data-testid="pdf-from-month" className="rounded-md border border-gray-200 px-3 py-2 text-sm" value={fromMonth} onChange={e => setFromMonth(parseInt(e.target.value))}>
+                {MONTHS.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+              </select>
+              <Input data-testid="pdf-from-year" type="number" value={fromYear} onChange={e => setFromYear(parseInt(e.target.value) || now.getFullYear())} />
+            </div>
+            <p className="text-xs font-medium text-gray-500 uppercase">Sampai</p>
+            <div className="grid grid-cols-2 gap-2">
+              <select data-testid="pdf-to-month" className="rounded-md border border-gray-200 px-3 py-2 text-sm" value={toMonth} onChange={e => setToMonth(parseInt(e.target.value))}>
+                {MONTHS.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+              </select>
+              <Input data-testid="pdf-to-year" type="number" value={toYear} onChange={e => setToYear(parseInt(e.target.value) || now.getFullYear())} />
+            </div>
+          </div>
+        )}
+        <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white" onClick={handleDownload} data-testid="pdf-download-btn">
+          <Download size={14} className="mr-2" />Download PDF
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Edit Referral Modal ───
+function EditReferralModal({ open, onClose, referralName, users, onSave, saving }) {
+  const refUsers = users.filter(u => (u.referral || '') === referralName);
+  return (
+    <Modal open={open} onClose={onClose} title={`Edit Referral: ${referralName}`} wide>
+      <div className="space-y-3">
+        <p className="text-sm text-gray-500 mb-2">{refUsers.length} user dalam referral ini</p>
+        {refUsers.map(u => (
+          <EditReferralUserRow key={u.id} user={u} onSave={onSave} saving={saving} />
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
+function EditReferralUserRow({ user, onSave, saving }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    referral: user.referral || '', bank_name: user.bank_name || '',
+    account_name: user.account_name || '', account_number: user.account_number || '',
+    cashback_percentage: user.cashback_percentage || 10
+  });
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleSave = async () => {
+    await onSave(user.id, form);
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between p-3 rounded-lg border bg-gray-50/50 gap-3" data-testid={`ref-user-row-${user.id}`}>
+        <div className="min-w-0">
+          <p className="font-medium text-sm text-gray-900">{user.name}</p>
+          <p className="text-xs text-gray-500">
+            CB: {user.cashback_percentage}% · Bank: {user.bank_name || '-'} · Rek: {user.account_name || '-'} ({user.account_number || '-'})
+          </p>
+        </div>
+        <Button size="sm" variant="outline" className="h-7 text-xs flex-shrink-0" onClick={() => setEditing(true)} data-testid={`edit-ref-user-${user.id}`}>
+          <Pencil size={11} className="mr-1" />Edit
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 rounded-lg border border-cyan-200 bg-cyan-50/30 space-y-2" data-testid={`ref-user-form-${user.id}`}>
+      <p className="font-medium text-sm text-gray-900">{user.name}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Referral"><Input value={form.referral} onChange={e => set('referral', e.target.value)} className="h-8 text-sm" data-testid={`ref-edit-referral-${user.id}`} /></Field>
+        <Field label="CB (%)"><Input type="number" value={form.cashback_percentage} onChange={e => set('cashback_percentage', parseFloat(e.target.value) || 0)} className="h-8 text-sm" data-testid={`ref-edit-cb-${user.id}`} /></Field>
+        <Field label="Bank"><Input value={form.bank_name} onChange={e => set('bank_name', e.target.value)} className="h-8 text-sm" data-testid={`ref-edit-bank-${user.id}`} /></Field>
+        <Field label="Nama Rek"><Input value={form.account_name} onChange={e => set('account_name', e.target.value)} className="h-8 text-sm" data-testid={`ref-edit-accname-${user.id}`} /></Field>
+        <Field label="No Rek"><Input value={form.account_number} onChange={e => set('account_number', e.target.value)} className="h-8 text-sm" data-testid={`ref-edit-accnum-${user.id}`} /></Field>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button size="sm" className="h-7 text-xs bg-cyan-600 hover:bg-cyan-700 text-white" onClick={handleSave} disabled={saving} data-testid={`ref-save-${user.id}`}>Simpan</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>Batal</Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Spend Form (Add/Edit) ───
 function SpendForm({ spend, onSave, onCancel, saving }) {
   const now = new Date();
@@ -107,14 +225,25 @@ function SpendForm({ spend, onSave, onCancel, saving }) {
 }
 
 // ─── Spend Row ───
-function SpendRow({ spend, onEdit, onDelete, onUploadProof, deleting }) {
+function SpendRow({ spend, onEdit, onDelete, onUploadProof, onTogglePayment, deleting }) {
   const fileRef = React.useRef(null);
+  const isPaid = spend.payment_status === 'paid';
   return (
     <tr className="border-b last:border-0 hover:bg-gray-50 text-sm" data-testid={`spend-row-${spend.id}`}>
       <td className="py-2 px-3">{MONTHS[spend.month]} {spend.year}</td>
       <td className="py-2 px-3 text-right font-medium">{fmtRp(spend.spend_amount)}</td>
       <td className="py-2 px-3 text-center">{spend.cashback_percentage}%</td>
       <td className="py-2 px-3 text-right font-medium text-green-700">{fmtRp(spend.cashback_amount)}</td>
+      <td className="py-2 px-3 text-center">
+        <button
+          onClick={() => onTogglePayment(spend.id)}
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition ${isPaid ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}
+          data-testid={`toggle-payment-${spend.id}`}
+        >
+          {isPaid ? <CheckCircle size={11} /> : <Clock size={11} />}
+          {isPaid ? 'Sudah' : 'Belum'}
+        </button>
+      </td>
       <td className="py-2 px-3 text-center">
         {spend.proof_url ? (
           <a href={`${API}${spend.proof_url}`} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline text-xs" data-testid={`proof-link-${spend.id}`}>Lihat</a>
@@ -140,7 +269,7 @@ function SpendRow({ spend, onEdit, onDelete, onUploadProof, deleting }) {
 }
 
 // ─── User Card with Expandable Spends ───
-function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
+function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting, onOpenPdfFilter }) {
   const { token } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [spends, setSpends] = useState([]);
@@ -207,8 +336,13 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
     } catch { toast.error('Gagal upload bukti'); }
   };
 
-  const handleDownloadPdf = () => {
-    window.open(`${API}/api/admin/whitelist/${user.id}/pdf`, '_blank');
+  const handleTogglePayment = async (spendId) => {
+    try {
+      await axios.put(`${API}/api/admin/whitelist/spends/${spendId}/payment-status`, {}, { headers });
+      toast.success('Status pembayaran diupdate');
+      loadSpends();
+      onRefresh();
+    } catch { toast.error('Gagal update status'); }
   };
 
   return (
@@ -246,7 +380,6 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
 
       {expanded && (
         <div className="border-t">
-          {/* User info & actions */}
           <div className="px-5 py-3 bg-gray-50/60 flex flex-wrap items-center gap-2 text-xs">
             <span className="text-gray-500">Tel: <b className="text-gray-700">{user.phone || '-'}</b></span>
             <span className="text-gray-300">|</span>
@@ -254,7 +387,7 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
             {user.bank_name && <><span className="text-gray-300">|</span><span className="text-gray-500">Bank: <b className="text-gray-700">{user.bank_name} - {user.account_name} ({user.account_number})</b></span></>}
             {user.notes && <><span className="text-gray-300">|</span><span className="text-gray-500">Note: {user.notes}</span></>}
             <div className="ml-auto flex gap-1">
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleDownloadPdf()} data-testid={`pdf-user-${user.id}`}>
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onOpenPdfFilter(user)} data-testid={`pdf-user-${user.id}`}>
                 <FileText size={12} className="mr-1" />PDF
               </Button>
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onEdit(user)} data-testid={`edit-user-${user.id}`}>
@@ -273,7 +406,6 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
             </div>
           </div>
 
-          {/* Spends table */}
           <div className="px-5 py-3">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-semibold text-gray-700">Data Spending Bulanan</h4>
@@ -300,6 +432,7 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
                     <th className="py-2 px-3 text-right">Ad Spend</th>
                     <th className="py-2 px-3 text-center">CB %</th>
                     <th className="py-2 px-3 text-right">Cashback</th>
+                    <th className="py-2 px-3 text-center">Status</th>
                     <th className="py-2 px-3 text-center">Bukti</th>
                     <th className="py-2 px-3 text-right">Aksi</th>
                   </tr></thead>
@@ -309,6 +442,7 @@ function UserCard({ user, stats, onEdit, onDelete, onRefresh, deleting }) {
                         onEdit={sp => { setEditingSpend(sp); setShowSpendForm(true); }}
                         onDelete={handleDeleteSpend}
                         onUploadProof={handleUploadProof}
+                        onTogglePayment={handleTogglePayment}
                       />
                     ))}
                   </tbody>
@@ -333,6 +467,11 @@ export default function AdminWhitelist() {
   const [deletingUser, setDeletingUser] = useState(null);
   const [search, setSearch] = useState('');
   const [refFilter, setRefFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  // PDF filter modal state
+  const [pdfModal, setPdfModal] = useState({ open: false, referral: '', isUser: false, userId: '' });
+  // Edit referral modal state
+  const [editRefModal, setEditRefModal] = useState({ open: false, referral: '' });
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -377,8 +516,26 @@ export default function AdminWhitelist() {
     setDeletingUser(null);
   };
 
-  const handleDownloadReferralPdf = (refName) => {
-    window.open(`${API}/api/admin/whitelist/referral/${encodeURIComponent(refName)}/pdf`, '_blank');
+  const handleEditRefUser = async (userId, form) => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/api/admin/whitelist/${userId}`, form, { headers });
+      toast.success('User diupdate');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Gagal menyimpan');
+    }
+    setSaving(false);
+  };
+
+  const handleDownloadPdf = (name, fm, fy, tm, ty) => {
+    if (pdfModal.isUser) {
+      const params = fm ? `?from_month=${fm}&from_year=${fy}&to_month=${tm}&to_year=${ty}` : '';
+      window.open(`${API}/api/admin/whitelist/${pdfModal.userId}/pdf${params}`, '_blank');
+    } else {
+      const params = fm ? `?from_month=${fm}&from_year=${fy}&to_month=${tm}&to_year=${ty}` : '';
+      window.open(`${API}/api/admin/whitelist/referral/${encodeURIComponent(name)}/pdf${params}`, '_blank');
+    }
   };
 
   const uniqueReferrals = [...new Set(summary.users.map(u => u.referral).filter(Boolean))];
@@ -386,6 +543,8 @@ export default function AdminWhitelist() {
   const filteredUsers = summary.users.filter(u => {
     const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase()) || (u.phone || '').includes(search);
     const matchRef = !refFilter || u.referral === refFilter;
+    if (paymentFilter === 'has_unpaid') return matchSearch && matchRef && (u.unpaid || 0) > 0;
+    if (paymentFilter === 'all_paid') return matchSearch && matchRef && (u.unpaid || 0) === 0 && (u.paid || 0) > 0;
     return matchSearch && matchRef;
   });
 
@@ -449,9 +608,11 @@ export default function AdminWhitelist() {
                   <table className="w-full text-sm">
                     <thead><tr className="border-b text-xs text-gray-500 uppercase">
                       <th className="py-2 px-3 text-left">Referral</th>
-                      <th className="py-2 px-3 text-center">Jumlah User</th>
+                      <th className="py-2 px-3 text-center">User</th>
                       <th className="py-2 px-3 text-right">Total Spend</th>
-                      <th className="py-2 px-3 text-right">Total Cashback</th>
+                      <th className="py-2 px-3 text-right">Total CB</th>
+                      <th className="py-2 px-3 text-right">Sudah Bayar</th>
+                      <th className="py-2 px-3 text-right">Belum Bayar</th>
                       <th className="py-2 px-3 text-right">Aksi</th>
                     </tr></thead>
                     <tbody>
@@ -461,11 +622,18 @@ export default function AdminWhitelist() {
                           <td className="py-2 px-3 text-center">{r.users}</td>
                           <td className="py-2 px-3 text-right">{fmtRp(r.total_spend)}</td>
                           <td className="py-2 px-3 text-right text-green-700 font-medium">{fmtRp(r.total_cashback)}</td>
+                          <td className="py-2 px-3 text-right text-green-600 text-xs">{fmtRp(r.paid || 0)}</td>
+                          <td className="py-2 px-3 text-right text-amber-600 text-xs">{fmtRp(r.unpaid || 0)}</td>
                           <td className="py-2 px-3 text-right">
                             {r.referral !== 'Tidak ada' && (
-                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleDownloadReferralPdf(r.referral)} data-testid={`pdf-referral-${r.referral}`}>
-                                <Download size={12} className="mr-1" />PDF
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditRefModal({ open: true, referral: r.referral })} data-testid={`edit-referral-${r.referral}`}>
+                                  <Pencil size={11} className="mr-1" />Edit
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPdfModal({ open: true, referral: r.referral, isUser: false, userId: '' })} data-testid={`pdf-referral-${r.referral}`}>
+                                  <Download size={11} className="mr-1" />PDF
+                                </Button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -480,12 +648,17 @@ export default function AdminWhitelist() {
           {/* Filter */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <Input data-testid="wl-search" placeholder="Cari nama, email, atau telepon..." value={search} onChange={e => setSearch(e.target.value)} className="sm:max-w-xs" />
-            <select data-testid="wl-ref-filter" className="rounded-md border border-gray-200 px-3 py-2 text-sm sm:max-w-xs" value={refFilter} onChange={e => setRefFilter(e.target.value)}>
+            <select data-testid="wl-ref-filter" className="rounded-md border border-gray-200 px-3 py-2 text-sm sm:max-w-[180px]" value={refFilter} onChange={e => setRefFilter(e.target.value)}>
               <option value="">Semua Referral</option>
               {uniqueReferrals.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
-            {(search || refFilter) && (
-              <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setRefFilter(''); }}>Reset</Button>
+            <select data-testid="wl-payment-filter" className="rounded-md border border-gray-200 px-3 py-2 text-sm sm:max-w-[180px]" value={paymentFilter} onChange={e => setPaymentFilter(e.target.value)}>
+              <option value="">Semua Status</option>
+              <option value="has_unpaid">Ada Belum Dibayar</option>
+              <option value="all_paid">Semua Sudah Dibayar</option>
+            </select>
+            {(search || refFilter || paymentFilter) && (
+              <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setRefFilter(''); setPaymentFilter(''); }}>Reset</Button>
             )}
           </div>
 
@@ -504,6 +677,7 @@ export default function AdminWhitelist() {
                   onDelete={handleDeleteUser}
                   onRefresh={load}
                   deleting={deletingUser}
+                  onOpenPdfFilter={usr => setPdfModal({ open: true, referral: usr.name, isUser: true, userId: usr.id })}
                 />
               ))
             )}
@@ -515,6 +689,24 @@ export default function AdminWhitelist() {
       <Modal open={showUserForm} onClose={() => { setShowUserForm(false); setEditingUser(null); }} title={editingUser ? 'Edit User Whitelist' : 'Tambah User Whitelist'}>
         <UserForm user={editingUser} saving={saving} onSave={handleSaveUser} onCancel={() => { setShowUserForm(false); setEditingUser(null); }} />
       </Modal>
+
+      {/* PDF Filter Modal */}
+      <PdfFilterModal
+        open={pdfModal.open}
+        onClose={() => setPdfModal(p => ({ ...p, open: false }))}
+        onDownload={handleDownloadPdf}
+        referralName={pdfModal.referral}
+      />
+
+      {/* Edit Referral Modal */}
+      <EditReferralModal
+        open={editRefModal.open}
+        onClose={() => setEditRefModal({ open: false, referral: '' })}
+        referralName={editRefModal.referral}
+        users={summary.users}
+        onSave={handleEditRefUser}
+        saving={saving}
+      />
     </div>
   );
 }

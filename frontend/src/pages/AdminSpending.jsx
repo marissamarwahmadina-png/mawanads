@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import {
   RefreshCw, DollarSign, TrendingUp, Upload, Check, X,
-  Pencil, ChevronLeft, ChevronRight, Save, Download
+  Pencil, ChevronLeft, ChevronRight, Save, Download, CheckCircle, Clock
 } from 'lucide-react';
 import AdminNav from '../components/AdminNav';
 import { toast } from 'sonner';
@@ -62,11 +62,12 @@ function SpendChart({ data }) {
   );
 }
 
-function SpendTableRow({ row, onSave, onUploadProof, saving }) {
+function SpendTableRow({ row, onSave, onUploadProof, onTogglePayment, saving }) {
   const [editing, setEditing] = useState(false);
   const [amount, setAmount] = useState(row.spend_amount || 0);
   const [notes, setNotes] = useState(row.notes || '');
   const fileRef = React.useRef(null);
+  const isPaid = row.payment_status === 'paid';
 
   useEffect(() => {
     setAmount(row.spend_amount || 0);
@@ -101,6 +102,18 @@ function SpendTableRow({ row, onSave, onUploadProof, saving }) {
         <span className={`font-medium ${row.has_data ? 'text-green-700' : 'text-gray-300'}`}>
           {row.has_data ? fmtRp(row.cashback_amount) : '-'}
         </span>
+      </td>
+      <td className="py-3 px-3 text-center">
+        {row.has_data && row.spend_id ? (
+          <button
+            onClick={() => onTogglePayment(row.spend_id)}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition ${isPaid ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}
+            data-testid={`toggle-payment-${row.user_id}`}
+          >
+            {isPaid ? <CheckCircle size={11} /> : <Clock size={11} />}
+            {isPaid ? 'Sudah' : 'Belum'}
+          </button>
+        ) : <span className="text-gray-300 text-xs">-</span>}
       </td>
       <td className="py-3 px-3">
         {editing ? (
@@ -201,6 +214,14 @@ export default function AdminSpending() {
       toast.success('Bukti transfer diupload');
       load();
     } catch { toast.error('Gagal upload bukti'); }
+  };
+
+  const handleTogglePayment = async (spendId) => {
+    try {
+      await axios.put(`${API}/api/admin/whitelist/spends/${spendId}/payment-status`, {}, { headers });
+      toast.success('Status pembayaran diupdate');
+      load();
+    } catch { toast.error('Gagal update status'); }
   };
 
   const prevMonth = () => {
@@ -305,13 +326,14 @@ export default function AdminSpending() {
                       <th className="py-3 px-3 text-center font-semibold">CB %</th>
                       <th className="py-3 px-3 text-left font-semibold">Ad Spend</th>
                       <th className="py-3 px-3 text-right font-semibold">Cashback</th>
+                      <th className="py-3 px-3 text-center font-semibold">Status</th>
                       <th className="py-3 px-3 text-left font-semibold">Catatan</th>
                       <th className="py-3 px-3 text-center font-semibold">Bukti</th>
                       <th className="py-3 px-3 text-right font-semibold">Aksi</th>
                     </tr></thead>
                     <tbody>
                       {data.map(row => (
-                        <SpendTableRow key={row.user_id} row={row} onSave={handleSaveSpend} onUploadProof={handleUploadProof} saving={saving} />
+                        <SpendTableRow key={row.user_id} row={row} onSave={handleSaveSpend} onUploadProof={handleUploadProof} onTogglePayment={handleTogglePayment} saving={saving} />
                       ))}
                     </tbody>
                     <tfoot>
@@ -320,7 +342,7 @@ export default function AdminSpending() {
                         <td className="py-3 px-3"></td>
                         <td className="py-3 px-3">{fmtRp(totalSpend)}</td>
                         <td className="py-3 px-3 text-right text-green-700">{fmtRp(totalCashback)}</td>
-                        <td className="py-3 px-3" colSpan={3}></td>
+                        <td className="py-3 px-3" colSpan={4}></td>
                       </tr>
                     </tfoot>
                   </table>

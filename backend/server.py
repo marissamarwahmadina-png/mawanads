@@ -178,12 +178,14 @@ class MonthlySpendCreate(BaseModel):
     year: int
     spend_amount: float = 0
     notes: str = ""
+    payment_status: str = "unpaid"
 
 class MonthlySpendUpdate(BaseModel):
     month: Optional[int] = None
     year: Optional[int] = None
     spend_amount: Optional[float] = None
     notes: Optional[str] = None
+    payment_status: Optional[str] = None
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -862,6 +864,7 @@ async def create_monthly_spend(user_id: str, data: MonthlySpendCreate):
         "cashback_amount": cashback_amount,
         "proof_url": "",
         "notes": data.notes,
+        "payment_status": data.payment_status,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -907,6 +910,16 @@ async def upload_proof_of_payment(spend_id: str, file: UploadFile = File(...)):
     await db.monthly_spends.update_one({"id": spend_id}, {"$set": {"proof_url": proof_url, "updated_at": datetime.now(timezone.utc).isoformat()}})
     return {"success": True, "proof_url": proof_url}
 
+@api_router.put("/admin/whitelist/spends/{spend_id}/payment-status")
+async def toggle_payment_status(spend_id: str):
+    spend = await db.monthly_spends.find_one({"id": spend_id}, {"_id": 0})
+    if not spend:
+        raise HTTPException(status_code=404, detail="Spend tidak ditemukan")
+    current = spend.get("payment_status", "unpaid")
+    new_status = "paid" if current != "paid" else "unpaid"
+    await db.monthly_spends.update_one({"id": spend_id}, {"$set": {"payment_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    return {"success": True, "payment_status": new_status}
+
 @api_router.get("/admin/whitelist/uploads/{filename}")
 async def serve_upload(filename: str):
     filepath = UPLOAD_DIR / filename
@@ -915,69 +928,23 @@ async def serve_upload(filename: str):
     return FileResponse(filepath)
 
 @api_router.get("/admin/whitelist/{user_id}/pdf")
-async def generate_user_pdf(user_id: str):
+async def generate_user_pdf(user_id: str, from_month: int = 0, from_year: int = 0, to_month: int = 0, to_year: int = 0):
     from fpdf import FPDF
     user = await db.whitelist_users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User tidak ditemukan")
-    spends = await db.monthly_spends.find({"user_id": user_id}, {"_id": 0}).sort([("year", 1), ("month", 1)]).to_list(10000)
-    month_names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "Laporan Cashback", ln=True, align="C")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, f"Tanggal cetak: {datetime.now(timezone.utc).strftime('%d %B %Y')}", ln=True, align="C")
-    pdf.ln(8)
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.cell(0, 8, "Detail User", ln=True)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.cell(50, 6, "Nama:", 0)
-    pdf.cell(0, 6, user.get("name", "-"), ln=True)
-    pdf.cell(50, 6, "Email:", 0)
-    pdf.cell(0, 6, user.get("email", "-"), ln=True)
-    pdf.cell(50, 6, "Telepon:", 0)
-    pdf.cell(0, 6, user.get("phone", "-"), ln=True)
-    pdf.cell(50, 6, "Referral:", 0)
-    pdf.cell(0, 6, user.get("referral", "-"), ln=True)
-    pdf.cell(50, 6, "Cashback (%):", 0)
-    pdf.cell(0, 6, f"{user.get('cashback_percentage', 0)}%", ln=True)
-    pdf.ln(6)
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.cell(0, 8, "Rincian Spending & Cashback", ln=True)
-    pdf.set_font("Helvetica", "B", 9)
-    pdf.set_fill_color(230, 230, 230)
-    pdf.cell(50, 7, "Bulan", 1, 0, "C", True)
-    pdf.cell(45, 7, "Ad Spend (Rp)", 1, 0, "C", True)
-    pdf.cell(25, 7, "CB (%)", 1, 0, "C", True)
-    pdf.cell(45, 7, "Cashback (Rp)", 1, 0, "C", True)
-    pdf.cell(25, 7, "Bukti", 1, 1, "C", True)
-    pdf.set_font("Helvetica", "", 9)
-    total_spend = 0
-    total_cb = 0
-    for s in spends:
-        m = s.get("month", 0)
-        y = s.get("year", 0)
-        label = f"{month_names[m] if 1 <= m <= 12 else m} {y}"
-        spend_amt = s.get("spend_amount", 0)
-        cb_amt = s.get("cashback_amount", 0)
-        total_spend += spend_amt
-        total_cb += cb_amt
-        proof = "Ya" if s.get("proof_url") else "-"
-        pdf.cell(50, 7, label, 1, 0, "L")
-        pdf.cell(45, 7, f"{spend_amt:,.0f}", 1, 0, "R")
-        pdf.cell(25, 7, f"{s.get('cashback_percentage', 0)}%", 1, 0, "C")
-        pdf.cell(45, 7, f"{cb_amt:,.0f}", 1, 0, "R")
-        pdf.cell(25, 7, proof, 1, 1, "C")
-    pdf.set_font("Helvetica", "B", 9)
-    pdf.cell(50, 7, "TOTAL", 1, 0, "C", True)
-    pdf.cell(45, 7, f"{total_spend:,.0f}", 1, 0, "R", True)
-    pdf.cell(25, 7, "", 1, 0, "C", True)
-    pdf.cell(45, 7, f"{total_cb:,.0f}", 1, 0, "R", True)
-    pdf.cell(25, 7, "", 1, 1, "C", True)
-    pdf.ln(10)
-    pdf.set_font("Helvetica", "I", 8)
-    pdf.cell(0, 5, "Dokumen ini digenerate secara otomatis oleh Mawana Digital Services", ln=True, align="C")
+    query = {"user_id": user_id}
+    if from_month and from_year and to_month and to_year:
+        conditions = []
+        for y in range(from_year, to_year + 1):
+            sm = from_month if y == from_year else 1
+            em = to_month if y == to_year else 12
+            conditions.append({"year": y, "month": {"$gte": sm, "$lte": em}})
+        if conditions:
+            query["$or"] = conditions
+    spends = await db.monthly_spends.find(query, {"_id": 0}).sort([("year", 1), ("month", 1)]).to_list(10000)
+    period_label = _get_period_label(from_month, from_year, to_month, to_year)
+    pdf = _build_cashback_pdf(user.get("referral", "-"), [user], {user["id"]: spends}, period_label)
     safe_name = user.get("name", "user").replace(" ", "_")
     pdf_filename = f"cashback_{safe_name}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
     pdf_path = UPLOAD_DIR / pdf_filename
@@ -985,79 +952,193 @@ async def generate_user_pdf(user_id: str):
     return FileResponse(pdf_path, filename=pdf_filename, media_type="application/pdf")
 
 @api_router.get("/admin/whitelist/referral/{referral_name}/pdf")
-async def generate_referral_pdf(referral_name: str):
+async def generate_referral_pdf(referral_name: str, from_month: int = 0, from_year: int = 0, to_month: int = 0, to_year: int = 0):
     from fpdf import FPDF
     users = await db.whitelist_users.find({"referral": referral_name}, {"_id": 0}).to_list(10000)
     if not users:
         raise HTTPException(status_code=404, detail="Tidak ada user dengan referral tersebut")
     user_ids = [u["id"] for u in users]
-    all_spends = await db.monthly_spends.find({"user_id": {"$in": user_ids}}, {"_id": 0}).sort([("year", 1), ("month", 1)]).to_list(100000)
+    query = {"user_id": {"$in": user_ids}}
+    if from_month and from_year and to_month and to_year:
+        conditions = []
+        for y in range(from_year, to_year + 1):
+            sm = from_month if y == from_year else 1
+            em = to_month if y == to_year else 12
+            conditions.append({"year": y, "month": {"$gte": sm, "$lte": em}})
+        if conditions:
+            query["$or"] = conditions
+    all_spends = await db.monthly_spends.find(query, {"_id": 0}).sort([("year", 1), ("month", 1)]).to_list(100000)
     spend_map = {}
     for s in all_spends:
         uid = s["user_id"]
         if uid not in spend_map:
             spend_map[uid] = []
         spend_map[uid].append(s)
-    month_names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, f"Laporan Cashback - Referral: {referral_name}", ln=True, align="C")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, f"Tanggal cetak: {datetime.now(timezone.utc).strftime('%d %B %Y')}", ln=True, align="C")
-    pdf.ln(6)
-    grand_total_spend = 0
-    grand_total_cb = 0
-    for user in users:
-        pdf.set_font("Helvetica", "B", 11)
-        pdf.cell(0, 8, f"{user['name']} ({user.get('email', '-')}) - CB: {user.get('cashback_percentage', 0)}%", ln=True)
-        pdf.set_font("Helvetica", "B", 9)
-        pdf.set_fill_color(230, 230, 230)
-        pdf.cell(50, 7, "Bulan", 1, 0, "C", True)
-        pdf.cell(45, 7, "Ad Spend (Rp)", 1, 0, "C", True)
-        pdf.cell(25, 7, "CB (%)", 1, 0, "C", True)
-        pdf.cell(45, 7, "Cashback (Rp)", 1, 1, "C", True)
-        pdf.set_font("Helvetica", "", 9)
-        user_spends = spend_map.get(user["id"], [])
-        user_total_spend = 0
-        user_total_cb = 0
-        for s in user_spends:
-            m = s.get("month", 0)
-            y = s.get("year", 0)
-            label = f"{month_names[m] if 1 <= m <= 12 else m} {y}"
-            spend_amt = s.get("spend_amount", 0)
-            cb_amt = s.get("cashback_amount", 0)
-            user_total_spend += spend_amt
-            user_total_cb += cb_amt
-            pdf.cell(50, 7, label, 1, 0, "L")
-            pdf.cell(45, 7, f"{spend_amt:,.0f}", 1, 0, "R")
-            pdf.cell(25, 7, f"{s.get('cashback_percentage', 0)}%", 1, 0, "C")
-            pdf.cell(45, 7, f"{cb_amt:,.0f}", 1, 1, "R")
-        if not user_spends:
-            pdf.set_font("Helvetica", "I", 9)
-            pdf.cell(165, 7, "Belum ada data spending", 1, 1, "C")
-        pdf.set_font("Helvetica", "B", 9)
-        pdf.cell(50, 7, "Subtotal", 1, 0, "C", True)
-        pdf.cell(45, 7, f"{user_total_spend:,.0f}", 1, 0, "R", True)
-        pdf.cell(25, 7, "", 1, 0, "C", True)
-        pdf.cell(45, 7, f"{user_total_cb:,.0f}", 1, 1, "R", True)
-        grand_total_spend += user_total_spend
-        grand_total_cb += user_total_cb
-        pdf.ln(4)
-    pdf.ln(4)
-    pdf.set_font("Helvetica", "B", 11)
-    pdf.set_fill_color(200, 220, 255)
-    pdf.cell(95, 8, "GRAND TOTAL", 1, 0, "C", True)
-    pdf.cell(35, 8, f"Rp {grand_total_spend:,.0f}", 1, 0, "R", True)
-    pdf.cell(35, 8, f"Rp {grand_total_cb:,.0f}", 1, 1, "R", True)
-    pdf.ln(10)
-    pdf.set_font("Helvetica", "I", 8)
-    pdf.cell(0, 5, "Dokumen ini digenerate secara otomatis oleh Mawana Digital Services", ln=True, align="C")
+    period_label = _get_period_label(from_month, from_year, to_month, to_year)
+    pdf = _build_cashback_pdf(referral_name, users, spend_map, period_label)
     safe_ref = referral_name.replace(" ", "_")
     pdf_filename = f"cashback_referral_{safe_ref}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
     pdf_path = UPLOAD_DIR / pdf_filename
     pdf.output(str(pdf_path))
     return FileResponse(pdf_path, filename=pdf_filename, media_type="application/pdf")
+
+def _get_period_label(fm, fy, tm, ty):
+    mn = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+    if fm and fy and tm and ty:
+        if fm == tm and fy == ty:
+            return f"{mn[fm]} {fy}"
+        return f"{mn[fm]} {fy} - {mn[tm]} {ty}"
+    return "Semua Periode"
+
+def _build_cashback_pdf(referral_name, users, spend_map, period_label):
+    from fpdf import FPDF
+    mn = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+    pw = pdf.w - 20  # page width minus margins
+
+    # ── Header ──
+    pdf.set_fill_color(13, 35, 74)
+    pdf.rect(10, 10, pw, 28, "F")
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_xy(16, 14)
+    pdf.cell(pw / 2, 8, "MAWANA", 0, 0, "L")
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_xy(16, 23)
+    pdf.cell(pw / 2, 6, "Cashback Report", 0, 0, "L")
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_xy(pw / 2, 14)
+    pdf.cell(pw / 2 + 4, 6, f"Referral: {referral_name}", 0, 0, "R")
+    pdf.set_xy(pw / 2, 20)
+    pdf.cell(pw / 2 + 4, 6, f"Period: {period_label}", 0, 0, "R")
+    pdf.set_xy(pw / 2, 26)
+    pdf.cell(pw / 2 + 4, 6, f"Generated: {datetime.now(timezone.utc).strftime('%d %B %Y')}", 0, 0, "R")
+
+    # ── Summary Cards ──
+    grand_spend = sum(sum(s.get("spend_amount", 0) for s in spend_map.get(u["id"], [])) for u in users)
+    grand_cb = sum(sum(s.get("cashback_amount", 0) for s in spend_map.get(u["id"], [])) for u in users)
+    paid_cb = sum(sum(s.get("cashback_amount", 0) for s in spend_map.get(u["id"], []) if s.get("payment_status") == "paid") for u in users)
+    unpaid_cb = grand_cb - paid_cb
+
+    pdf.set_text_color(50, 50, 50)
+    card_w = (pw - 6) / 3
+    card_y = 44
+    for i, (title, value, color) in enumerate([
+        ("Total Cashback", f"Rp {grand_cb:,.0f}", (0, 162, 193)),
+        ("Sudah Dibayar", f"Rp {paid_cb:,.0f}", (34, 197, 94)),
+        ("Belum Dibayar", f"Rp {unpaid_cb:,.0f}", (239, 68, 68)),
+    ]):
+        cx = 10 + i * (card_w + 3)
+        pdf.set_fill_color(245, 247, 250)
+        pdf.rect(cx, card_y, card_w, 20, "F")
+        pdf.set_font("Helvetica", "", 8)
+        pdf.set_text_color(120, 120, 120)
+        pdf.set_xy(cx + 4, card_y + 2)
+        pdf.cell(card_w - 8, 5, title, 0, 0, "L")
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(*color)
+        pdf.set_xy(cx + 4, card_y + 8)
+        pdf.cell(card_w - 8, 8, value, 0, 0, "L")
+
+    # Transaction volume row
+    pdf.set_text_color(50, 50, 50)
+    pdf.set_xy(10, 68)
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(pw / 2, 5, f"Total Ad Spend: ", 0, 0, "L")
+    pdf.set_font("Helvetica", "B", 8)
+    pdf.set_text_color(50, 50, 50)
+    pdf.cell(0, 5, f"Rp {grand_spend:,.0f}", 0, 1, "L")
+
+    # ── Commission Details Table ──
+    pdf.ln(4)
+    pdf.set_text_color(13, 35, 74)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(pw * 0.6, 8, "Cashback Details", 0, 0, "L")
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(0, 162, 193)
+    pdf.cell(pw * 0.4, 8, f"Rp {grand_cb:,.0f}", 0, 1, "R")
+
+    # Table header
+    pdf.set_fill_color(245, 247, 250)
+    pdf.set_text_color(100, 100, 100)
+    pdf.set_font("Helvetica", "B", 8)
+    col = [pw * 0.32, pw * 0.18, pw * 0.08, pw * 0.20, pw * 0.14, pw * 0.08]
+    headers = ["MEMBER", "PERIOD", "RATE", "AD SPEND", "CASHBACK", "STATUS"]
+    for i, h in enumerate(headers):
+        pdf.cell(col[i], 7, h, 0, 0, "L" if i < 2 else "R" if i in [3, 4] else "C", True)
+    pdf.ln()
+
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(50, 50, 50)
+    for user in users:
+        user_spends = spend_map.get(user["id"], [])
+        if not user_spends:
+            pdf.set_text_color(150, 150, 150)
+            pdf.cell(col[0], 6, f"MAWANA - {user['name']}", 0, 0, "L")
+            pdf.cell(col[1], 6, "-", 0, 0, "L")
+            pdf.cell(col[2], 6, f"{user.get('cashback_percentage', 0):.1f}%", 0, 0, "C")
+            pdf.cell(col[3], 6, "0", 0, 0, "R")
+            pdf.cell(col[4], 6, "0", 0, 0, "R")
+            pdf.cell(col[5], 6, "-", 0, 1, "C")
+            pdf.set_text_color(50, 50, 50)
+            continue
+        for s in user_spends:
+            m = s.get("month", 0)
+            y = s.get("year", 0)
+            period = f"{mn[m] if 1 <= m <= 12 else m} {y}"
+            spend_a = s.get("spend_amount", 0)
+            cb_a = s.get("cashback_amount", 0)
+            paid = s.get("payment_status", "unpaid") == "paid"
+            pdf.cell(col[0], 6, f"MAWANA - {user['name']}", 0, 0, "L")
+            pdf.cell(col[1], 6, period, 0, 0, "L")
+            pdf.cell(col[2], 6, f"{s.get('cashback_percentage', 0):.1f}%", 0, 0, "C")
+            pdf.cell(col[3], 6, f"{spend_a:,.0f}", 0, 0, "R")
+            pdf.cell(col[4], 6, f"{cb_a:,.0f}", 0, 0, "R")
+            if paid:
+                pdf.set_text_color(34, 197, 94)
+                pdf.cell(col[5], 6, "PAID", 0, 1, "C")
+            else:
+                pdf.set_text_color(239, 68, 68)
+                pdf.cell(col[5], 6, "UNPAID", 0, 1, "C")
+            pdf.set_text_color(50, 50, 50)
+        # Separator line
+        pdf.set_draw_color(230, 230, 230)
+        pdf.line(10, pdf.get_y(), 10 + pw, pdf.get_y())
+        pdf.ln(1)
+
+    # ── Bank Details ──
+    pdf.ln(4)
+    pdf.set_text_color(13, 35, 74)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(0, 8, "Transfer Details", 0, 1, "L")
+    pdf.set_font("Helvetica", "B", 8)
+    pdf.set_fill_color(245, 247, 250)
+    pdf.set_text_color(100, 100, 100)
+    bcol = [pw * 0.25, pw * 0.25, pw * 0.25, pw * 0.25]
+    for i, h in enumerate(["REFERRAL / MEMBER", "BANK", "ACCOUNT NAME", "ACCOUNT NO"]):
+        pdf.cell(bcol[i], 7, h, 0, 0, "L", True)
+    pdf.ln()
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(50, 50, 50)
+    for user in users:
+        pdf.cell(bcol[0], 6, user.get("name", "-"), 0, 0, "L")
+        pdf.cell(bcol[1], 6, user.get("bank_name", "-") or "-", 0, 0, "L")
+        pdf.cell(bcol[2], 6, user.get("account_name", "-") or "-", 0, 0, "L")
+        pdf.cell(bcol[3], 6, user.get("account_number", "-") or "-", 0, 1, "L")
+
+    # ── Footer ──
+    pdf.ln(8)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(10, pdf.get_y(), 10 + pw, pdf.get_y())
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "I", 7)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 4, "This report is auto-generated by Mawana Digital Services", 0, 1, "C")
+
+    return pdf
 
 @api_router.get("/admin/whitelist/summary")
 async def get_whitelist_summary():
@@ -1067,23 +1148,29 @@ async def get_whitelist_summary():
     for s in all_spends:
         uid = s["user_id"]
         if uid not in spend_map:
-            spend_map[uid] = {"total_spend": 0, "total_cashback": 0, "months": 0}
+            spend_map[uid] = {"total_spend": 0, "total_cashback": 0, "months": 0, "paid": 0, "unpaid": 0}
         spend_map[uid]["total_spend"] += s.get("spend_amount", 0)
         spend_map[uid]["total_cashback"] += s.get("cashback_amount", 0)
         spend_map[uid]["months"] += 1
+        if s.get("payment_status") == "paid":
+            spend_map[uid]["paid"] += s.get("cashback_amount", 0)
+        else:
+            spend_map[uid]["unpaid"] += s.get("cashback_amount", 0)
     result = []
     for u in users:
         uid = u["id"]
-        stats = spend_map.get(uid, {"total_spend": 0, "total_cashback": 0, "months": 0})
+        stats = spend_map.get(uid, {"total_spend": 0, "total_cashback": 0, "months": 0, "paid": 0, "unpaid": 0})
         result.append({**u, **stats})
     referrals = {}
     for u in result:
         ref = u.get("referral", "") or "Tidak ada"
         if ref not in referrals:
-            referrals[ref] = {"referral": ref, "users": 0, "total_spend": 0, "total_cashback": 0}
+            referrals[ref] = {"referral": ref, "users": 0, "total_spend": 0, "total_cashback": 0, "paid": 0, "unpaid": 0}
         referrals[ref]["users"] += 1
         referrals[ref]["total_spend"] += u.get("total_spend", 0)
         referrals[ref]["total_cashback"] += u.get("total_cashback", 0)
+        referrals[ref]["paid"] += u.get("paid", 0)
+        referrals[ref]["unpaid"] += u.get("unpaid", 0)
     return {"users": result, "referrals": list(referrals.values()), "total_users": len(users), "total_spend": sum(s.get("total_spend", 0) for s in result), "total_cashback": sum(s.get("total_cashback", 0) for s in result)}
 
 @api_router.get("/admin/whitelist/spends/monthly")
@@ -1111,6 +1198,7 @@ async def get_monthly_spends_all(month: int, year: int):
             "proof_url": s.get("proof_url", "") if s else "",
             "notes": s.get("notes", "") if s else "",
             "has_data": s is not None,
+            "payment_status": s.get("payment_status", "unpaid") if s else "unpaid",
         })
     total_spend = sum(r["spend_amount"] for r in result)
     total_cashback = sum(r["cashback_amount"] for r in result)

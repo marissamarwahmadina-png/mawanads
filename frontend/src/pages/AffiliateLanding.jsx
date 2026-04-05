@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { TrendingUp, User, DollarSign, Phone, ShieldCheck, BarChart3, Zap, Target, ArrowDown, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import MetaPixel, { trackMetaEvent } from '../components/MetaPixel';
+import MetaPixel from '../components/MetaPixel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -44,17 +44,9 @@ export const AffiliateLanding = () => {
       const submitData = { ...formData, affiliator: affiliator || 'direct' };
       const response = await axios.post(`${BACKEND_URL}/api/affiliate-lead`, submitData);
       if (response.data.success) {
+        toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
         // Set flag for ThankYou page to fire Purchase pixel
         sessionStorage.setItem('affiliate_form_submitted', 'true');
-        // Re-init pixel with Advanced Matching data for higher accuracy
-        if (window.fbq) {
-          window.fbq('init', pixelId, {
-            ph: formData.phone.replace(/\D/g, ''),
-            fn: formData.name.split(' ')[0]?.toLowerCase(),
-            ln: formData.name.split(' ').slice(1).join(' ')?.toLowerCase(),
-          });
-        }
-        toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
         navigate(`/affiliate/${affiliator}/thankyou`);
       }
     } catch (error) {

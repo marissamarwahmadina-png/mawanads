@@ -389,7 +389,7 @@ async def create_affiliate_lead(lead_data: AffiliateLeadCreate):
             
             return {
                 "success": True,
-                "data": lead_obj.model_dump()
+                "data": {**lead_obj.model_dump(), "submittedAt": lead_obj.submittedAt.isoformat()}
             }
         else:
             raise HTTPException(status_code=500, detail="Gagal menyimpan data")

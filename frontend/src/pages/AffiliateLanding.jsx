@@ -45,9 +45,7 @@ export const AffiliateLanding = () => {
       const response = await axios.post(`${BACKEND_URL}/api/affiliate-lead`, submitData);
       if (response.data.success) {
         toast.success('Terima kasih!', { description: 'Tim kami akan segera menghubungi Anda.' });
-        // Set flag for ThankYou page to fire Purchase pixel
-        sessionStorage.setItem('affiliate_form_submitted', 'true');
-        navigate(`/affiliate/${affiliator}/thankyou`);
+        navigate(`/affiliate/${affiliator}/thankyou`, { state: { submitted: true } });
       }
     } catch (error) {
       toast.error('Gagal mengirim', { description: error.response?.data?.detail || 'Silakan coba lagi.' });

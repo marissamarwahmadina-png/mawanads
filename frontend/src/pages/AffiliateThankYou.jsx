@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
@@ -13,16 +13,23 @@ const AFFILIATOR_PIXELS = {
 
 const AffiliateThankYou = () => {
   const { affiliator } = useParams();
+  const location = useLocation();
   const pixelId = AFFILIATOR_PIXELS[affiliator?.toLowerCase()] || AFFILIATOR_PIXELS['default'];
+  const firedRef = useRef(false);
 
   useEffect(() => {
-    // Only fire Purchase if user actually submitted the form (flag set in AffiliateLanding)
-    const submitted = sessionStorage.getItem('affiliate_form_submitted');
-    if (submitted) {
+    // Only fire Purchase if user came from successful form submission via navigate state
+    // Also check sessionStorage as fallback for older deployments
+    const fromForm = location.state?.submitted === true;
+    const fromSession = sessionStorage.getItem('affiliate_form_submitted') === 'true';
+
+    if ((fromForm || fromSession) && !firedRef.current) {
+      firedRef.current = true;
       trackMetaEvent('Purchase', { value: 1.00, currency: 'IDR' });
+      // Clean up sessionStorage if it was used
       sessionStorage.removeItem('affiliate_form_submitted');
     }
-  }, []);
+  }, [location.state]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">

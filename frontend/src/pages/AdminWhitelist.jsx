@@ -246,7 +246,7 @@ function SpendRow({ spend, onEdit, onDelete, onUploadProof, onTogglePayment, del
       </td>
       <td className="py-2 px-3 text-center">
         {spend.proof_url ? (
-          <a href={`${API}${spend.proof_url}`} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline text-xs" data-testid={`proof-link-${spend.id}`}>Lihat</a>
+          <a href={`${API}${spend.proof_url}?token=${localStorage.getItem('mawana_admin_token')}`} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline text-xs" data-testid={`proof-link-${spend.id}`}>Lihat</a>
         ) : <span className="text-gray-400 text-xs">-</span>}
       </td>
       <td className="py-2 px-3">
@@ -529,11 +529,12 @@ export default function AdminWhitelist() {
   };
 
   const handleDownloadPdf = (name, fm, fy, tm, ty) => {
+    const tk = localStorage.getItem('mawana_admin_token');
     if (pdfModal.isUser) {
-      const params = fm ? `?from_month=${fm}&from_year=${fy}&to_month=${tm}&to_year=${ty}` : '';
+      const params = fm ? `?from_month=${fm}&from_year=${fy}&to_month=${tm}&to_year=${ty}&token=${tk}` : `?token=${tk}`;
       window.open(`${API}/api/admin/whitelist/${pdfModal.userId}/pdf${params}`, '_blank');
     } else {
-      const params = fm ? `?from_month=${fm}&from_year=${fy}&to_month=${tm}&to_year=${ty}` : '';
+      const params = fm ? `?from_month=${fm}&from_year=${fy}&to_month=${tm}&to_year=${ty}&token=${tk}` : `?token=${tk}`;
       window.open(`${API}/api/admin/whitelist/referral/${encodeURIComponent(name)}/pdf${params}`, '_blank');
     }
   };

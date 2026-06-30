@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Depends, Request
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -35,6 +35,25 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+async def verify_admin(request: Request):
+    """Verifikasi JWT admin dari header Authorization: Bearer <token> ATAU query ?token=<token>."""
+    token = None
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth[len("Bearer "):].strip()
+    if not token:
+        token = request.query_params.get("token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Token tidak valid atau kadaluarsa")
+    if payload.get("sub") != "admin":
+        raise HTTPException(status_code=401, detail="Token tidak valid")
+    return True
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -717,7 +736,7 @@ async def tripay_callback(request: Request):
 
 ## ============== ADMIN WEBINAR ROUTES ==============
 
-@api_router.get("/admin/webinar/dashboard")
+@api_router.get("/admin/webinar/dashboard", dependencies=[Depends(verify_admin)])
 async def admin_webinar_dashboard():
     events = await db.webinar_events.find({}, {"_id": 0}).to_list(100)
     total_registrants = await db.webinar_registrants.count_documents({})
@@ -732,21 +751,21 @@ async def admin_webinar_dashboard():
         "total_revenue": total_revenue, "recent_transactions": recent
     }
 
-@api_router.get("/admin/webinar/registrants")
+@api_router.get("/admin/webinar/registrants", dependencies=[Depends(verify_admin)])
 async def admin_get_registrants(event_id: Optional[str] = None, status: Optional[str] = None):
     query = {}
     if event_id: query["event_id"] = event_id
     if status: query["ticket_status"] = status
     return await db.webinar_registrants.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
 
-@api_router.post("/admin/webinar/events")
+@api_router.post("/admin/webinar/events", dependencies=[Depends(verify_admin)])
 async def admin_create_event(event: dict):
     event_obj = WebinarEvent(**event)
     doc = event_obj.model_dump()
     await db.webinar_events.insert_one(doc)
     return {"success": True, "data": {k: v for k, v in doc.items() if k != '_id'}}
 
-@api_router.put("/admin/webinar/events/{event_id}")
+@api_router.put("/admin/webinar/events/{event_id}", dependencies=[Depends(verify_admin)])
 async def admin_update_event(event_id: str, update: dict):
     update["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.webinar_events.update_one({"id": event_id}, {"$set": update})
@@ -755,7 +774,7 @@ async def admin_update_event(event_id: str, update: dict):
 class UpdateRegistrantStatus(BaseModel):
     status: str
 
-@api_router.put("/admin/webinar/registrants/{registrant_id}/status")
+@api_router.put("/admin/webinar/registrants/{registrant_id}/status", dependencies=[Depends(verify_admin)])
 async def admin_update_registrant_status(registrant_id: str, body: UpdateRegistrantStatus):
     new_status = body.status.upper()
     if new_status not in ["PAID", "PENDING_PAYMENT", "EXPIRED", "FAILED", "CANCELLED"]:
@@ -768,26 +787,26 @@ async def admin_update_registrant_status(registrant_id: str, body: UpdateRegistr
         raise HTTPException(status_code=404, detail="Registrant tidak ditemukan")
     return {"success": True}
 
-@api_router.get("/admin/webinar/callback-logs")
+@api_router.get("/admin/webinar/callback-logs", dependencies=[Depends(verify_admin)])
 async def admin_get_callback_logs():
     logs = await db.tripay_callback_logs.find({}, {"_id": 0}).sort("received_at", -1).to_list(100)
     return logs
 
-@api_router.delete("/admin/webinar/registrants/{registrant_id}")
+@api_router.delete("/admin/webinar/registrants/{registrant_id}", dependencies=[Depends(verify_admin)])
 async def admin_delete_registrant(registrant_id: str):
     result = await db.webinar_registrants.delete_one({"id": registrant_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Registrant tidak ditemukan")
     return {"success": True}
 
-@api_router.delete("/admin/contacts/{contact_id}")
+@api_router.delete("/admin/contacts/{contact_id}", dependencies=[Depends(verify_admin)])
 async def admin_delete_contact(contact_id: str):
     result = await db.contacts.delete_one({"id": contact_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Contact tidak ditemukan")
     return {"success": True}
 
-@api_router.delete("/admin/affiliate-leads/{lead_id}")
+@api_router.delete("/admin/affiliate-leads/{lead_id}", dependencies=[Depends(verify_admin)])
 async def admin_delete_affiliate_lead(lead_id: str):
     result = await db.affiliate_leads.delete_one({"id": lead_id})
     if result.deleted_count == 0:
@@ -796,12 +815,12 @@ async def admin_delete_affiliate_lead(lead_id: str):
 
 ## ============== WHITELIST CASHBACK ROUTES ==============
 
-@api_router.get("/admin/whitelist")
+@api_router.get("/admin/whitelist", dependencies=[Depends(verify_admin)])
 async def get_whitelist_users():
     users = await db.whitelist_users.find({}, {"_id": 0}).sort("created_at", -1).to_list(10000)
     return users
 
-@api_router.post("/admin/whitelist")
+@api_router.post("/admin/whitelist", dependencies=[Depends(verify_admin)])
 async def create_whitelist_user(data: WhitelistUserCreate):
     user_doc = {
         "id": str(uuid.uuid4()),
@@ -820,7 +839,7 @@ async def create_whitelist_user(data: WhitelistUserCreate):
     await db.whitelist_users.insert_one(user_doc)
     return {"success": True, "data": {k: v for k, v in user_doc.items() if k != "_id"}}
 
-@api_router.put("/admin/whitelist/{user_id}")
+@api_router.put("/admin/whitelist/{user_id}", dependencies=[Depends(verify_admin)])
 async def update_whitelist_user(user_id: str, data: WhitelistUserUpdate):
     update = {k: v for k, v in data.model_dump(exclude_none=True).items()}
     if not update:
@@ -831,7 +850,7 @@ async def update_whitelist_user(user_id: str, data: WhitelistUserUpdate):
         raise HTTPException(status_code=404, detail="User tidak ditemukan")
     return {"success": True}
 
-@api_router.delete("/admin/whitelist/{user_id}")
+@api_router.delete("/admin/whitelist/{user_id}", dependencies=[Depends(verify_admin)])
 async def delete_whitelist_user(user_id: str):
     result = await db.whitelist_users.delete_one({"id": user_id})
     if result.deleted_count == 0:
@@ -839,12 +858,12 @@ async def delete_whitelist_user(user_id: str):
     await db.monthly_spends.delete_many({"user_id": user_id})
     return {"success": True}
 
-@api_router.get("/admin/whitelist/{user_id}/spends")
+@api_router.get("/admin/whitelist/{user_id}/spends", dependencies=[Depends(verify_admin)])
 async def get_user_spends(user_id: str):
     spends = await db.monthly_spends.find({"user_id": user_id}, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(10000)
     return spends
 
-@api_router.post("/admin/whitelist/{user_id}/spends")
+@api_router.post("/admin/whitelist/{user_id}/spends", dependencies=[Depends(verify_admin)])
 async def create_monthly_spend(user_id: str, data: MonthlySpendCreate):
     user = await db.whitelist_users.find_one({"id": user_id}, {"_id": 0})
     if not user:
@@ -871,7 +890,7 @@ async def create_monthly_spend(user_id: str, data: MonthlySpendCreate):
     await db.monthly_spends.insert_one(spend_doc)
     return {"success": True, "data": {k: v for k, v in spend_doc.items() if k != "_id"}}
 
-@api_router.put("/admin/whitelist/spends/{spend_id}")
+@api_router.put("/admin/whitelist/spends/{spend_id}", dependencies=[Depends(verify_admin)])
 async def update_monthly_spend(spend_id: str, data: MonthlySpendUpdate):
     update = {k: v for k, v in data.model_dump(exclude_none=True).items()}
     if not update:
@@ -888,14 +907,14 @@ async def update_monthly_spend(spend_id: str, data: MonthlySpendUpdate):
     await db.monthly_spends.update_one({"id": spend_id}, {"$set": update})
     return {"success": True}
 
-@api_router.delete("/admin/whitelist/spends/{spend_id}")
+@api_router.delete("/admin/whitelist/spends/{spend_id}", dependencies=[Depends(verify_admin)])
 async def delete_monthly_spend(spend_id: str):
     result = await db.monthly_spends.delete_one({"id": spend_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Spend tidak ditemukan")
     return {"success": True}
 
-@api_router.post("/admin/whitelist/spends/{spend_id}/proof")
+@api_router.post("/admin/whitelist/spends/{spend_id}/proof", dependencies=[Depends(verify_admin)])
 async def upload_proof_of_payment(spend_id: str, file: UploadFile = File(...)):
     spend = await db.monthly_spends.find_one({"id": spend_id}, {"_id": 0})
     if not spend:
@@ -910,7 +929,7 @@ async def upload_proof_of_payment(spend_id: str, file: UploadFile = File(...)):
     await db.monthly_spends.update_one({"id": spend_id}, {"$set": {"proof_url": proof_url, "updated_at": datetime.now(timezone.utc).isoformat()}})
     return {"success": True, "proof_url": proof_url}
 
-@api_router.put("/admin/whitelist/spends/{spend_id}/payment-status")
+@api_router.put("/admin/whitelist/spends/{spend_id}/payment-status", dependencies=[Depends(verify_admin)])
 async def toggle_payment_status(spend_id: str):
     spend = await db.monthly_spends.find_one({"id": spend_id}, {"_id": 0})
     if not spend:
@@ -920,14 +939,14 @@ async def toggle_payment_status(spend_id: str):
     await db.monthly_spends.update_one({"id": spend_id}, {"$set": {"payment_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}})
     return {"success": True, "payment_status": new_status}
 
-@api_router.get("/admin/whitelist/uploads/{filename}")
+@api_router.get("/admin/whitelist/uploads/{filename}", dependencies=[Depends(verify_admin)])
 async def serve_upload(filename: str):
     filepath = UPLOAD_DIR / filename
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="File tidak ditemukan")
     return FileResponse(filepath)
 
-@api_router.get("/admin/whitelist/{user_id}/pdf")
+@api_router.get("/admin/whitelist/{user_id}/pdf", dependencies=[Depends(verify_admin)])
 async def generate_user_pdf(user_id: str, from_month: int = 0, from_year: int = 0, to_month: int = 0, to_year: int = 0):
     from fpdf import FPDF
     user = await db.whitelist_users.find_one({"id": user_id}, {"_id": 0})
@@ -951,7 +970,7 @@ async def generate_user_pdf(user_id: str, from_month: int = 0, from_year: int = 
     pdf.output(str(pdf_path))
     return FileResponse(pdf_path, filename=pdf_filename, media_type="application/pdf")
 
-@api_router.get("/admin/whitelist/referral/{referral_name}/pdf")
+@api_router.get("/admin/whitelist/referral/{referral_name}/pdf", dependencies=[Depends(verify_admin)])
 async def generate_referral_pdf(referral_name: str, from_month: int = 0, from_year: int = 0, to_month: int = 0, to_year: int = 0):
     from fpdf import FPDF
     users = await db.whitelist_users.find({"referral": referral_name}, {"_id": 0}).to_list(10000)
@@ -1140,7 +1159,7 @@ def _build_cashback_pdf(referral_name, users, spend_map, period_label):
 
     return pdf
 
-@api_router.get("/admin/whitelist/summary")
+@api_router.get("/admin/whitelist/summary", dependencies=[Depends(verify_admin)])
 async def get_whitelist_summary():
     users = await db.whitelist_users.find({}, {"_id": 0}).to_list(10000)
     all_spends = await db.monthly_spends.find({}, {"_id": 0}).to_list(100000)
@@ -1173,7 +1192,7 @@ async def get_whitelist_summary():
         referrals[ref]["unpaid"] += u.get("unpaid", 0)
     return {"users": result, "referrals": list(referrals.values()), "total_users": len(users), "total_spend": sum(s.get("total_spend", 0) for s in result), "total_cashback": sum(s.get("total_cashback", 0) for s in result)}
 
-@api_router.get("/admin/whitelist/spends/monthly")
+@api_router.get("/admin/whitelist/spends/monthly", dependencies=[Depends(verify_admin)])
 async def get_monthly_spends_all(month: int, year: int):
     """Get all spends for a given month/year, merged with all whitelist users"""
     users = await db.whitelist_users.find({}, {"_id": 0}).sort("name", 1).to_list(10000)

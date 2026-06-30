@@ -124,7 +124,7 @@ function SpendTableRow({ row, onSave, onUploadProof, onTogglePayment, saving }) 
       </td>
       <td className="py-3 px-3 text-center">
         {row.proof_url ? (
-          <a href={`${API}${row.proof_url}`} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline text-xs font-medium" data-testid={`proof-link-${row.user_id}`}>Lihat</a>
+          <a href={`${API}${row.proof_url}?token=${localStorage.getItem('mawana_admin_token')}`} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline text-xs font-medium" data-testid={`proof-link-${row.user_id}`}>Lihat</a>
         ) : (
           <span className="text-gray-300 text-xs">-</span>
         )}

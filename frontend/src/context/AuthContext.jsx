@@ -13,14 +13,15 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState(() => localStorage.getItem('mawana_admin_token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('mawana_admin_token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check if user has valid token
-    const token = localStorage.getItem('mawana_admin_token');
-    if (token) {
-      // TODO: Verify token with backend if needed
+    const stored = localStorage.getItem('mawana_admin_token');
+    if (stored) {
+      setToken(stored);
       setIsAuthenticated(true);
     }
     setLoading(false);
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }) => {
       
       if (response.data.access_token) {
         setIsAuthenticated(true);
+        setToken(response.data.access_token);
         localStorage.setItem('mawana_admin_token', response.data.access_token);
         return true;
       }
@@ -47,11 +49,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setIsAuthenticated(false);
+    setToken(null);
     localStorage.removeItem('mawana_admin_token');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

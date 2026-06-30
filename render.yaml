@@ -1,0 +1,49 @@
+# Render Blueprint untuk backend mawanads (FastAPI + MongoDB)
+# Cara pakai: di dashboard Render -> New -> Blueprint -> pilih repo mawanads.
+# Render akan baca file ini, minta isian env var yang sync:false.
+services:
+  - type: web
+    name: mawanads-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+      # --- WAJIB ---
+      - key: MONGO_URL          # connection string dari MongoDB Atlas (mongodb+srv://...)
+        sync: false
+      - key: DB_NAME
+        value: mawanads
+      - key: JWT_SECRET_KEY     # dibuat otomatis oleh Render
+        generateValue: true
+      - key: ADMIN_PASSWORD     # password login admin (ganti, jangan pakai default!)
+        sync: false
+      - key: CORS_ORIGINS       # isi URL frontend Vercel, mis. https://mawanads.vercel.app
+        sync: false
+      - key: REACT_APP_FRONTEND_URL  # sama dgn CORS_ORIGINS (URL frontend Vercel)
+        sync: false
+
+      # --- OPSIONAL: email notifikasi (Resend). Kosongkan kalau belum perlu ---
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+      - key: ADMIN_NOTIFICATION_EMAIL
+        sync: false
+
+      # --- OPSIONAL: pembayaran TriPay. sandbox dulu, isi key kalau mau live ---
+      - key: TRIPAY_MODE
+        value: sandbox
+      - key: TRIPAY_API_KEY
+        sync: false
+      - key: TRIPAY_PRIVATE_KEY
+        sync: false
+      - key: TRIPAY_MERCHANT_CODE
+        sync: false
+      - key: TRIPAY_CALLBACK_URL
+        sync: false

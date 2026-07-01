@@ -27,6 +27,7 @@ load_dotenv(ROOT_DIR / '.env')
 # New team/workflow feature modules (import after load_dotenv so env is available)
 import core  # noqa: E402
 import auth_users  # noqa: E402
+import workflow  # noqa: E402
 
 # Upload directory for proof of payment files
 UPLOAD_DIR = ROOT_DIR / "uploads"
@@ -1219,6 +1220,7 @@ async def get_monthly_spends_all(month: int, year: int):
 # Include the router in the main app
 app.include_router(api_router)
 app.include_router(auth_users.router)
+app.include_router(workflow.router)
 
 # Get CORS origins from environment
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
@@ -1246,6 +1248,10 @@ async def startup_db_client():
         try:
             await core.db.users.create_index("email", unique=True)
             await core.db.users.create_index("id", unique=True)
+            await core.db.tasks.create_index("status")
+            await core.db.tasks.create_index("assignee_id")
+            await core.db.tasks.create_index("client_id")
+            await core.db.clients.create_index("id", unique=True)
             await core.seed_owner()
             logger.info("Owner account ensured")
         except Exception as e:

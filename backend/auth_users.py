@@ -65,6 +65,15 @@ async def change_password(body: PasswordChange, user: dict = Depends(core.get_cu
     return {"success": True}
 
 
+@router.get("/members")
+async def list_members(_: dict = Depends(core.get_current_user)):
+    """Lightweight active-member list for assignee pickers (any authenticated user)."""
+    members = await core.db.users.find(
+        {"active": {"$ne": False}}, {"_id": 0, "id": 1, "name": 1, "role": 1}
+    ).sort("name", 1).to_list(500)
+    return members
+
+
 @router.get("/users")
 async def list_users(_: dict = Depends(core.require_roles("owner", "admin"))):
     return await core.db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", 1).to_list(500)

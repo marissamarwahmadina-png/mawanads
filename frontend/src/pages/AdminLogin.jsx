@@ -8,7 +8,7 @@ const LOGO = 'https://qsepqrbzgyowbstrgyye.supabase.co/storage/v1/object/public/
 export default function AdminLogin() {
   const navigate = useNavigate();
   const { login, isAuthenticated, isAdmin } = useAuth();
-  const landing = (admin) => (admin ? '/admin/dashboard' : '/admin/akun');
+  const landing = (admin) => (admin ? '/admin/dashboard' : '/admin/tugas');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);

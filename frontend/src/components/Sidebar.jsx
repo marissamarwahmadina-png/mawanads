@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   BarChart3, Users, Ticket, Shield, ClipboardList, UserCog, User,
-  Home, LogOut, X,
+  Home, LogOut, X, LayoutGrid, Building2,
 } from 'lucide-react';
 
 const LOGO = 'https://qsepqrbzgyowbstrgyye.supabase.co/storage/v1/object/public/donasi-bukti/assets/logo.png';
@@ -20,6 +20,14 @@ const ALL_ROLES = ['owner', 'admin', 'designer', 'advertiser', 'business_dev'];
 const ADMINS = ['owner', 'admin'];
 
 const NAV_SECTIONS = [
+  {
+    title: 'Kerja',
+    items: [
+      { to: '/admin/board', label: 'Papan Kerja', icon: LayoutGrid, roles: ALL_ROLES },
+      { to: '/admin/tugas', label: 'Tugas Saya', icon: ClipboardList, roles: ALL_ROLES },
+      { to: '/admin/clients', label: 'Clients', icon: Building2, roles: ALL_ROLES },
+    ],
+  },
   {
     title: 'Manajemen',
     items: [

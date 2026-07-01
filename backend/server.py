@@ -29,6 +29,7 @@ import core  # noqa: E402
 import auth_users  # noqa: E402
 import notifications as notif  # noqa: E402
 import workflow  # noqa: E402
+import design  # noqa: E402
 
 # Upload directory for proof of payment files
 UPLOAD_DIR = ROOT_DIR / "uploads"
@@ -1223,6 +1224,7 @@ app.include_router(api_router)
 app.include_router(auth_users.router)
 app.include_router(workflow.router)
 app.include_router(notif.router)
+app.include_router(design.router)
 
 # Get CORS origins from environment
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
@@ -1255,6 +1257,8 @@ async def startup_db_client():
             await core.db.tasks.create_index("client_id")
             await core.db.clients.create_index("id", unique=True)
             await core.db.notifications.create_index([("user_id", 1), ("read", 1)])
+            await core.db.design_requests.create_index("status")
+            await core.db.design_requests.create_index("designer_id")
             await core.seed_owner()
             logger.info("Owner account ensured")
         except Exception as e:

@@ -9,7 +9,7 @@ import {
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-const LOGO = 'https://qsepqrbzgyowbstrgyye.supabase.co/storage/v1/object/public/donasi-bukti/assets/logo.png';
+const LOGO = '/logo-mawana.png';
 
 const ROLE_LABELS = {
   owner: 'Owner',
@@ -92,8 +92,8 @@ export default function Sidebar({ open, onClose }) {
       >
         {/* Brand */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-slate-800">
-          <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-2">
-            <img src={LOGO} alt="Mawana" className="h-7 w-7 rounded bg-white p-0.5" />
+          <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-2.5">
+            <img src={LOGO} alt="Mawana Corp" className="h-9 w-9 rounded-lg bg-white p-1 object-contain" />
             <span className="font-bold text-white text-sm">Mawana Workspace</span>
           </button>
           <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white" aria-label="Tutup menu">

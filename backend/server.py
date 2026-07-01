@@ -24,6 +24,10 @@ import json
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# New team/workflow feature modules (import after load_dotenv so env is available)
+import core  # noqa: E402
+import auth_users  # noqa: E402
+
 # Upload directory for proof of payment files
 UPLOAD_DIR = ROOT_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -38,21 +42,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 async def verify_admin(request: Request):
-    """Verifikasi JWT admin dari header Authorization: Bearer <token> ATAU query ?token=<token>."""
-    token = None
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        token = auth[len("Bearer "):].strip()
-    if not token:
-        token = request.query_params.get("token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Tidak terautentikasi")
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Token tidak valid atau kadaluarsa")
-    if payload.get("sub") != "admin":
-        raise HTTPException(status_code=401, detail="Token tidak valid")
+    """Allow only owner/admin (email login) or the legacy single-password admin token."""
+    user = await core.get_current_user(request)
+    if user.get("role") not in ("owner", "admin"):
+        raise HTTPException(status_code=403, detail="Akses ditolak")
     return True
 
 # MongoDB connection
@@ -1225,6 +1218,7 @@ async def get_monthly_spends_all(month: int, year: int):
 
 # Include the router in the main app
 app.include_router(api_router)
+app.include_router(auth_users.router)
 
 # Get CORS origins from environment
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
@@ -1247,7 +1241,16 @@ async def startup_db_client():
     try:
         await client.admin.command('ping')
         logger.info("Successfully connected to MongoDB")
-        
+
+        # Seed the owner account + indexes for the team/workflow features
+        try:
+            await core.db.users.create_index("email", unique=True)
+            await core.db.users.create_index("id", unique=True)
+            await core.seed_owner()
+            logger.info("Owner account ensured")
+        except Exception as e:
+            logger.warning(f"Owner seeding skipped: {str(e)}")
+
         try:
             await db.contacts.create_index([("submittedAt", -1)])
             await db.affiliate_leads.create_index([("submittedAt", -1)])

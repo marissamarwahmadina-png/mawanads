@@ -12,7 +12,6 @@ import {
   RefreshCw, Search, Download, Edit3,
   DollarSign, Calendar, LogOut, BarChart3, FileText, Trash2, MessageCircle
 } from 'lucide-react';
-import AdminNav from '../components/AdminNav';
 
 function getWaReminders(name, invoice, amount) {
   const firstName = name.split(' ')[0];
@@ -160,7 +159,6 @@ export default function AdminWebinar() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminNav />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">

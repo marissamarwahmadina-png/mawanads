@@ -8,7 +8,6 @@ import {
   RefreshCw, DollarSign, TrendingUp, Upload, Check, X,
   Pencil, ChevronLeft, ChevronRight, Save, Download, CheckCircle, Clock
 } from 'lucide-react';
-import AdminNav from '../components/AdminNav';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import * as XLSX from 'xlsx';
@@ -259,7 +258,6 @@ export default function AdminSpending() {
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="admin-spending-page">
-      <AdminNav />
       <div className="py-6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}

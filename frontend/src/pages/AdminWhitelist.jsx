@@ -9,7 +9,6 @@ import {
   ChevronDown, ChevronUp, X, Users, DollarSign, TrendingUp, Download,
   CheckCircle, Clock, Filter
 } from 'lucide-react';
-import AdminNav from '../components/AdminNav';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -559,7 +558,6 @@ export default function AdminWhitelist() {
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="admin-whitelist-page">
-      <AdminNav />
       <div className="py-6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}

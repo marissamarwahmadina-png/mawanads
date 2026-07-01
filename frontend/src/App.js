@@ -15,6 +15,9 @@ import WebinarConfirmation from "./pages/WebinarConfirmation";
 import AdminWebinar from "./pages/AdminWebinar";
 import AdminWhitelist from "./pages/AdminWhitelist";
 import AdminSpending from "./pages/AdminSpending";
+import TeamPage from "./pages/TeamPage";
+import AdminAccount from "./pages/AdminAccount";
+import AdminLayout from "./components/AdminLayout";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
@@ -28,46 +31,24 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLogin />} />
+
+            {/* Admin workspace — sidebar layout, protected */}
             <Route
-              path="/admin/dashboard"
               element={
                 <ProtectedRoute>
-                  <AdminDashboard />
+                  <AdminLayout />
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="/admin/contact"
-              element={
-                <ProtectedRoute>
-                  <AdminContacts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/webinar"
-              element={
-                <ProtectedRoute>
-                  <AdminWebinar />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/whitelist"
-              element={
-                <ProtectedRoute>
-                  <AdminWhitelist />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/whitelist/spends"
-              element={
-                <ProtectedRoute>
-                  <AdminSpending />
-                </ProtectedRoute>
-              }
-            />
+            >
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/contact" element={<AdminContacts />} />
+              <Route path="/admin/webinar" element={<AdminWebinar />} />
+              <Route path="/admin/whitelist" element={<AdminWhitelist />} />
+              <Route path="/admin/whitelist/spends" element={<AdminSpending />} />
+              <Route path="/admin/team" element={<TeamPage />} />
+              <Route path="/admin/akun" element={<AdminAccount />} />
+            </Route>
+
             <Route path="/affiliate/:affiliator" element={<AffiliateLanding />} />
             <Route path="/affiliate/:affiliator/thankyou" element={<AffiliateThankYou />} />
             <Route path="/ketentuan-layanan" element={<KetentuanLayanan />} />

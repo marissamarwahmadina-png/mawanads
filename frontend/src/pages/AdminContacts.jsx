@@ -7,7 +7,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Mail, Phone, Building, Calendar, User, MessageSquare, RefreshCw, DollarSign, UserCheck, Download, Filter, BarChart3, Trash2 } from 'lucide-react';
-import AdminNav from '../components/AdminNav';
 import * as XLSX from 'xlsx';
 import { format, parseISO } from 'date-fns';
 
@@ -161,7 +160,6 @@ export const AdminContacts = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminNav />
       <div className="py-6">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">

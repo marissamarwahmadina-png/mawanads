@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Users, UserCheck, TrendingUp, Database, RefreshCw, Calendar } from 'lucide-react';
-import AdminNav from '../components/AdminNav';
 import { format, parseISO, startOfDay, startOfWeek, startOfMonth, startOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, subDays, subMonths, isWithinInterval } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
@@ -158,7 +157,6 @@ export const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminNav />
       <div className="py-6">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
 

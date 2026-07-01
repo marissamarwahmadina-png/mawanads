@@ -7,8 +7,11 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 
 import core
+import notifications as notif
 
 router = APIRouter(prefix="/api")
+
+STATUS_LABELS = {"todo": "To Do", "in_progress": "Dikerjakan", "review": "Review", "done": "Selesai"}
 
 SERVICE_TYPES = ["erp", "fundraising_mentoring", "ad_optimization", "whitelist", "other"]
 TASK_STATUSES = ["todo", "in_progress", "review", "done"]
@@ -183,6 +186,9 @@ async def create_task(body: TaskIn, user: dict = Depends(core.get_current_user))
     doc.update({"id": str(uuid.uuid4()), "created_by": user["id"], "created_at": _now(), "updated_at": _now()})
     await core.db.tasks.insert_one(doc)
     doc.pop("_id", None)
+    if doc.get("assignee_id") and doc["assignee_id"] != user["id"]:
+        await notif.notify(doc["assignee_id"], "Tugas baru untukmu",
+                           f"\"{doc['title']}\" ditugaskan ke kamu oleh {user.get('name', 'admin')}.")
     return (await _enrich([doc]))[0]
 
 
@@ -202,6 +208,17 @@ async def update_task(task_id: str, body: TaskUpdate, user: dict = Depends(core.
         update["updated_at"] = _now()
         await core.db.tasks.update_one({"id": task_id}, {"$set": update})
     fresh = await core.db.tasks.find_one({"id": task_id}, {"_id": 0})
+
+    # Notifications
+    new_assignee = fresh.get("assignee_id")
+    reassigned = "assignee_id" in update and new_assignee and new_assignee != task.get("assignee_id")
+    if reassigned and new_assignee != user["id"]:
+        await notif.notify(new_assignee, "Tugas ditugaskan ke kamu",
+                           f"\"{fresh['title']}\" kini menjadi tanggung jawabmu.")
+    status_changed = "status" in update and update["status"] != task.get("status")
+    if status_changed and new_assignee and new_assignee != user["id"] and not reassigned:
+        await notif.notify(new_assignee, "Status tugas berubah",
+                           f"\"{fresh['title']}\" dipindah ke {STATUS_LABELS.get(update['status'], update['status'])}.")
     return (await _enrich([fresh]))[0]
 
 

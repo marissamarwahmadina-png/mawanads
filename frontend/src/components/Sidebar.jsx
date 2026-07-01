@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import {
   BarChart3, Users, Ticket, Shield, ClipboardList, UserCog, User,
-  Home, LogOut, X, LayoutGrid, Building2,
+  Home, LogOut, X, LayoutGrid, Building2, Bell,
 } from 'lucide-react';
+
+const API = process.env.REACT_APP_BACKEND_URL;
 
 const LOGO = 'https://qsepqrbzgyowbstrgyye.supabase.co/storage/v1/object/public/donasi-bukti/assets/logo.png';
 
@@ -41,6 +44,7 @@ const NAV_SECTIONS = [
   {
     title: 'Akun',
     items: [
+      { to: '/admin/notifikasi', label: 'Notifikasi', icon: Bell, roles: ALL_ROLES, badge: true },
       { to: '/admin/team', label: 'Tim', icon: UserCog, roles: ADMINS },
       { to: '/admin/akun', label: 'Akun Saya', icon: User, roles: ALL_ROLES },
     ],
@@ -49,7 +53,22 @@ const NAV_SECTIONS = [
 
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
-  const { user, role, logout } = useAuth();
+  const { user, role, logout, token } = useAuth();
+  const [unread, setUnread] = useState(0);
+
+  const pollUnread = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${API}/api/notifications/count`, { headers: { Authorization: `Bearer ${token}` } });
+      setUnread(res.data?.unread || 0);
+    } catch { /* ignore */ }
+  }, [token]);
+
+  useEffect(() => {
+    pollUnread();
+    const id = setInterval(pollUnread, 45000);
+    return () => clearInterval(id);
+  }, [pollUnread]);
 
   const handleLogout = () => {
     logout();
@@ -109,7 +128,12 @@ export default function Sidebar({ open, onClose }) {
                       data-testid={`nav-${item.label.toLowerCase().replace(/\s/g, '-')}`}
                     >
                       <item.icon size={17} />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {item.badge && unread > 0 && (
+                        <span className="min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                          {unread > 9 ? '9+' : unread}
+                        </span>
+                      )}
                     </NavLink>
                   ))}
                 </div>

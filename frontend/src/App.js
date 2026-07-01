@@ -20,6 +20,7 @@ import AdminAccount from "./pages/AdminAccount";
 import WorkBoard from "./pages/WorkBoard";
 import MyTasks from "./pages/MyTasks";
 import ClientsPage from "./pages/ClientsPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import AdminLayout from "./components/AdminLayout";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -46,6 +47,7 @@ function App() {
               <Route path="/admin/board" element={<WorkBoard />} />
               <Route path="/admin/tugas" element={<MyTasks />} />
               <Route path="/admin/clients" element={<ClientsPage />} />
+              <Route path="/admin/notifikasi" element={<NotificationsPage />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/contact" element={<AdminContacts />} />
               <Route path="/admin/webinar" element={<AdminWebinar />} />

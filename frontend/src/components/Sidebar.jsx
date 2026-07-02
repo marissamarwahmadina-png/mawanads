@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import {
   BarChart3, Users, Ticket, Shield, ClipboardList, UserCog, User,
-  Home, LogOut, X, LayoutGrid, Building2, Bell, Palette, Receipt,
+  Home, LogOut, X, LayoutGrid, Building2, Bell, Palette, Receipt, HandHeart,
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -30,6 +30,12 @@ const NAV_SECTIONS = [
       { to: '/admin/desain', label: 'Pengajuan Desain', icon: Palette, roles: ALL_ROLES },
       { to: '/admin/tugas', label: 'Tugas Saya', icon: ClipboardList, roles: ALL_ROLES },
       { to: '/admin/clients', label: 'Clients', icon: Building2, roles: ALL_ROLES },
+    ],
+  },
+  {
+    title: 'Monitoring',
+    items: [
+      { to: '/admin/crowdfunding', label: 'Crowdfunding', icon: HandHeart, roles: ALL_ROLES },
     ],
   },
   {

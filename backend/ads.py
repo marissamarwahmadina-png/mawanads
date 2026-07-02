@@ -129,8 +129,13 @@ async def delete_ad(aid: str, _: dict = Depends(core.require_roles("owner", "adm
 
 @router.get("/ad-campaigns/meta/status")
 async def meta_status(_: dict = Depends(core.get_current_user)):
-    """Whether the backend has Meta Ads credentials configured."""
-    return {"configured": meta_ads.is_configured()}
+    """Whether Meta Ads is configured + when it was last synced (for auto-refresh)."""
+    last = await core.db.ad_campaigns.find_one(
+        {"source": "meta", "last_synced": {"$exists": True}},
+        {"_id": 0, "last_synced": 1}, sort=[("last_synced", -1)],
+    )
+    return {"configured": meta_ads.is_configured(),
+            "last_synced": (last or {}).get("last_synced")}
 
 
 @router.post("/ad-campaigns/meta/sync")

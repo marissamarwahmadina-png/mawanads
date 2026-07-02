@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
@@ -54,8 +54,11 @@ export default function AdsPage() {
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
   const [metaConfigured, setMetaConfigured] = useState(false);
+  const [metaLastSynced, setMetaLastSynced] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const canSync = isAdmin || role === 'advertiser';
+  const autoSyncedRef = useRef(false);
+  const SIX_HOURS = 6 * 60 * 60 * 1000;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,24 +68,34 @@ export default function AdsPage() {
         axios.get(`${API}/api/ad-campaigns/stats`, { headers }),
         axios.get(`${API}/api/ad-campaigns/meta/status`, { headers }).catch(() => ({ data: {} })),
       ]);
-      setItems(c.data || []); setStats(s.data); setMetaConfigured(!!m.data?.configured);
+      setItems(c.data || []); setStats(s.data);
+      setMetaConfigured(!!m.data?.configured);
+      setMetaLastSynced(m.data?.last_synced || null);
     } catch { toast.error('Gagal memuat data iklan'); }
     setLoading(false);
   }, [headers]);
 
   useEffect(() => { load(); }, [load]);
 
-  const syncMeta = async () => {
+  const syncMeta = useCallback(async (silent = false) => {
     setSyncing(true);
     try {
       const { data } = await axios.post(`${API}/api/ad-campaigns/meta/sync`, {}, { headers });
       const errs = (data.errors || []).length;
-      toast.success(`Sync Meta selesai: ${data.synced} campaign dari ${data.accounts} akun` + (errs ? ` (${errs} akun gagal)` : ''));
+      if (!silent) toast.success(`Sync Meta selesai: ${data.synced} campaign dari ${data.accounts} akun` + (errs ? ` (${errs} akun gagal)` : ''));
       if (errs) console.warn('Meta sync errors:', data.errors);
       load();
-    } catch (err) { toast.error(err?.response?.data?.detail || 'Gagal sync Meta'); }
+    } catch (err) { if (!silent) toast.error(err?.response?.data?.detail || 'Gagal sync Meta'); }
     setSyncing(false);
-  };
+  }, [headers, load]);
+
+  // Auto-sync once per visit if data is stale (>6h) — runs quietly in the background.
+  useEffect(() => {
+    if (!metaConfigured || !canSync || autoSyncedRef.current) return;
+    autoSyncedRef.current = true;
+    const stale = !metaLastSynced || (Date.now() - new Date(metaLastSynced).getTime() > SIX_HOURS);
+    if (stale) syncMeta(true);
+  }, [metaConfigured, canSync, metaLastSynced, syncMeta, SIX_HOURS]);
 
   const openCreate = () => { setForm(blank); setModal({ a: null }); };
   const openEdit = (a) => { setForm({ ...blank, ...a }); setModal({ a }); };

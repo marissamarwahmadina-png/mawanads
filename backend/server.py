@@ -32,6 +32,7 @@ import workflow  # noqa: E402
 import design  # noqa: E402
 import invoicing  # noqa: E402
 import crowdfunding  # noqa: E402
+import ads  # noqa: E402
 
 # Upload directory for proof of payment files
 UPLOAD_DIR = ROOT_DIR / "uploads"
@@ -1229,6 +1230,7 @@ app.include_router(notif.router)
 app.include_router(design.router)
 app.include_router(invoicing.router)
 app.include_router(crowdfunding.router)
+app.include_router(ads.router)
 
 # Get CORS origins from environment
 cors_origins = os.environ.get('CORS_ORIGINS', '*')

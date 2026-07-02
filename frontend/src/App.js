@@ -23,6 +23,7 @@ import ClientsPage from "./pages/ClientsPage";
 import DesignBoard from "./pages/DesignBoard";
 import InvoicesPage from "./pages/InvoicesPage";
 import CrowdfundingPage from "./pages/CrowdfundingPage";
+import AdsPage from "./pages/AdsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AdminLayout from "./components/AdminLayout";
 import { AuthProvider } from "./context/AuthContext";
@@ -53,6 +54,7 @@ function App() {
               <Route path="/admin/desain" element={<DesignBoard />} />
               <Route path="/admin/invoice" element={<InvoicesPage />} />
               <Route path="/admin/crowdfunding" element={<CrowdfundingPage />} />
+              <Route path="/admin/iklan" element={<AdsPage />} />
               <Route path="/admin/notifikasi" element={<NotificationsPage />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/contact" element={<AdminContacts />} />

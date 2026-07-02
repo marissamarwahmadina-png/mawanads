@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 import core
+import meta_ads
 
 router = APIRouter(prefix="/api")
 
@@ -124,3 +125,20 @@ async def update_ad(aid: str, body: AdUpdate, _: dict = Depends(core.get_current
 async def delete_ad(aid: str, _: dict = Depends(core.require_roles("owner", "admin", "advertiser"))):
     await core.db.ad_campaigns.delete_one({"id": aid})
     return {"success": True}
+
+
+@router.get("/ad-campaigns/meta/status")
+async def meta_status(_: dict = Depends(core.get_current_user)):
+    """Whether the backend has Meta Ads credentials configured."""
+    return {"configured": meta_ads.is_configured()}
+
+
+@router.post("/ad-campaigns/meta/sync")
+async def meta_sync(_: dict = Depends(core.require_roles("owner", "admin", "advertiser"))):
+    """Tarik data campaign live dari Meta Ads (Graph API) dan upsert ke dashboard."""
+    try:
+        return await meta_ads.sync()
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Gagal sync Meta: {e}")

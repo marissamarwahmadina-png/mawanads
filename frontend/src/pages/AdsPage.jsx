@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
-import { Megaphone, Plus, Loader2, Pencil, Trash2, X, TrendingUp, DollarSign, Target, Rocket, AlertTriangle } from 'lucide-react';
+import { Megaphone, Plus, Loader2, Pencil, Trash2, X, TrendingUp, DollarSign, Target, Rocket, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -53,20 +53,36 @@ export default function AdsPage() {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
+  const [metaConfigured, setMetaConfigured] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const canSync = isAdmin || role === 'advertiser';
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [c, s] = await Promise.all([
+      const [c, s, m] = await Promise.all([
         axios.get(`${API}/api/ad-campaigns`, { headers }),
         axios.get(`${API}/api/ad-campaigns/stats`, { headers }),
+        axios.get(`${API}/api/ad-campaigns/meta/status`, { headers }).catch(() => ({ data: {} })),
       ]);
-      setItems(c.data || []); setStats(s.data);
+      setItems(c.data || []); setStats(s.data); setMetaConfigured(!!m.data?.configured);
     } catch { toast.error('Gagal memuat data iklan'); }
     setLoading(false);
   }, [headers]);
 
   useEffect(() => { load(); }, [load]);
+
+  const syncMeta = async () => {
+    setSyncing(true);
+    try {
+      const { data } = await axios.post(`${API}/api/ad-campaigns/meta/sync`, {}, { headers });
+      const errs = (data.errors || []).length;
+      toast.success(`Sync Meta selesai: ${data.synced} campaign dari ${data.accounts} akun` + (errs ? ` (${errs} akun gagal)` : ''));
+      if (errs) console.warn('Meta sync errors:', data.errors);
+      load();
+    } catch (err) { toast.error(err?.response?.data?.detail || 'Gagal sync Meta'); }
+    setSyncing(false);
+  };
 
   const openCreate = () => { setForm(blank); setModal({ a: null }); };
   const openEdit = (a) => { setForm({ ...blank, ...a }); setModal({ a }); };
@@ -99,7 +115,14 @@ export default function AdsPage() {
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Megaphone className="text-cyan-600" size={24} /> Monitor Iklan (ROAS)</h1>
           <p className="text-gray-500 text-sm mt-1">Pantau iklan berjalan, jaga ROAS, scale-up terukur</p>
         </div>
-        <button onClick={openCreate} className="inline-flex items-center gap-2 bg-cyan-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-cyan-700 shrink-0" data-testid="add-ad"><Plus size={16} /> Tambah Iklan</button>
+        <div className="flex items-center gap-2 shrink-0">
+          {canSync && metaConfigured && (
+            <button onClick={syncMeta} disabled={syncing} className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-60" data-testid="sync-meta" title="Tarik data live dari Meta Ads">
+              {syncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Sync Meta
+            </button>
+          )}
+          <button onClick={openCreate} className="inline-flex items-center gap-2 bg-cyan-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-cyan-700" data-testid="add-ad"><Plus size={16} /> Tambah Iklan</button>
+        </div>
       </div>
 
       {stats && (
@@ -147,6 +170,7 @@ export default function AdsPage() {
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${platform.color}`}>{platform.label}</span>
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${sf(a.status).badge}`}>{sf(a.status).label}</span>
                       <RoasBadge roas={roas} target={a.target_roas} />
+                      {a.source === 'meta' && <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600" title={a.last_synced ? `Sinkron: ${new Date(a.last_synced).toLocaleString('id-ID')}` : 'Data live dari Meta'}><RefreshCw size={10} /> live</span>}
                     </div>
                     <h3 className="font-semibold text-gray-900 mt-1.5 leading-snug">{a.name}</h3>
                     {a.client_name && <p className="text-xs text-gray-500 mt-0.5">{a.client_name}</p>}

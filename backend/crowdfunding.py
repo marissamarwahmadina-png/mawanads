@@ -12,8 +12,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 import core
+import scrapers
 
 router = APIRouter(prefix="/api")
+
+
+class ScrapeIn(BaseModel):
+    url: str
 
 PLATFORMS = ["kitabisa", "niatbaik", "kawanbantu", "raihmimpi", "sharinghappiness", "benihbaik", "wecare", "lainnya"]
 STATUSES = ["active", "paused", "ended"]
@@ -126,3 +131,33 @@ async def update_campaign(cid: str, body: CampaignUpdate, _: dict = Depends(core
 async def delete_campaign(cid: str, user: dict = Depends(core.require_roles("owner", "admin", "advertiser"))):
     await core.db.campaigns.delete_one({"id": cid})
     return {"success": True}
+
+
+@router.post("/campaigns/scrape")
+async def scrape_preview(body: ScrapeIn, _: dict = Depends(core.get_current_user)):
+    """Ambil data campaign dari link (preview, tidak menyimpan)."""
+    if not body.url.strip():
+        raise HTTPException(status_code=400, detail="URL kosong")
+    return await scrapers.scrape(body.url.strip())
+
+
+@router.post("/campaigns/{cid}/sync")
+async def sync_campaign(cid: str, _: dict = Depends(core.get_current_user)):
+    """Re-scrape link tersimpan dan update angka campaign."""
+    camp = await core.db.campaigns.find_one({"id": cid})
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campaign tidak ditemukan")
+    if not camp.get("url"):
+        raise HTTPException(status_code=400, detail="Campaign ini belum punya link")
+    res = await scrapers.scrape(camp["url"])
+    if not res.get("ok"):
+        raise HTTPException(status_code=422, detail=res.get("error", "Gagal sync"))
+    d = res["data"]
+    update = {"updated_at": _now(), "last_synced": _now()}
+    for k in ("raised", "target", "donor_count", "fundraiser_count"):
+        if d.get(k):
+            update[k] = d[k]
+    if d.get("fundraiser") and not camp.get("fundraiser"):
+        update["fundraiser"] = d["fundraiser"]
+    await core.db.campaigns.update_one({"id": cid}, {"$set": update})
+    return await core.db.campaigns.find_one({"id": cid}, {"_id": 0})

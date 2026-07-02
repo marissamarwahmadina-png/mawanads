@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
-import { HandHeart, Plus, Loader2, Pencil, Trash2, X, Users, HeartHandshake, Wallet, Target, ExternalLink } from 'lucide-react';
+import { HandHeart, Plus, Loader2, Pencil, Trash2, X, Users, HeartHandshake, Wallet, Target, ExternalLink, DownloadCloud, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -87,6 +87,37 @@ export default function CrowdfundingPage() {
     catch (err) { toast.error(err?.response?.data?.detail || 'Gagal menghapus'); }
   };
 
+  const [scraping, setScraping] = useState(false);
+  const scrapeFromUrl = async () => {
+    if (!form.url.trim()) return toast.error('Isi link campaign dulu');
+    setScraping(true);
+    try {
+      const res = await axios.post(`${API}/api/campaigns/scrape`, { url: form.url.trim() }, { headers });
+      if (res.data.ok) {
+        const d = res.data.data;
+        setForm((p) => ({
+          ...p, platform: res.data.platform || p.platform,
+          name: d.name || p.name, raised: d.raised ?? p.raised, target: d.target ?? p.target,
+          donor_count: d.donor_count ?? p.donor_count, fundraiser: d.fundraiser || p.fundraiser,
+        }));
+        toast.success('Data terisi otomatis dari link');
+      } else {
+        toast.error(res.data.error || 'Belum bisa auto-ambil untuk platform ini');
+      }
+    } catch (err) { toast.error(err?.response?.data?.detail || 'Gagal mengambil data'); }
+    setScraping(false);
+  };
+
+  const [syncingId, setSyncingId] = useState(null);
+  const syncCard = async (c) => {
+    setSyncingId(c.id);
+    try {
+      await axios.post(`${API}/api/campaigns/${c.id}/sync`, {}, { headers });
+      toast.success('Data campaign diperbarui'); load();
+    } catch (err) { toast.error(err?.response?.data?.detail || 'Gagal sync'); }
+    setSyncingId(null);
+  };
+
   const chartData = (stats?.per_platform || []).map((p) => ({ name: pf(p.platform).label, raised: p.raised, fill: pf(p.platform).bar }));
   const fld = 'w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none text-sm';
 
@@ -150,6 +181,7 @@ export default function CrowdfundingPage() {
                     {c.fundraiser && <p className="text-xs text-gray-500 mt-0.5">oleh {c.fundraiser}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    {c.url && <button onClick={() => syncCard(c)} disabled={syncingId === c.id} className="text-gray-400 hover:text-cyan-600 p-1" title="Sync data dari link">{syncingId === c.id ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}</button>}
                     {c.url && <a href={c.url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-cyan-600 p-1"><ExternalLink size={15} /></a>}
                     <button onClick={() => openEdit(c)} className="text-gray-400 hover:text-cyan-600 p-1"><Pencil size={15} /></button>
                     {canDelete && <button onClick={() => remove(c)} className="text-gray-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>}
@@ -190,7 +222,16 @@ export default function CrowdfundingPage() {
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={fld}>{STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
             </div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Link Campaign</label><input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className={fld} placeholder="https://kitabisa.com/campaign/..." /></div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link Campaign</label>
+              <div className="flex gap-2">
+                <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className={`${fld} flex-1`} placeholder="https://raihmimpi.id/campaign/..." />
+                <button type="button" onClick={scrapeFromUrl} disabled={scraping} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-50 text-cyan-700 text-sm font-medium hover:bg-cyan-100 disabled:opacity-60 whitespace-nowrap">
+                  {scraping ? <Loader2 size={14} className="animate-spin" /> : <DownloadCloud size={14} />} Ambil Data
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">Auto-isi dari link (raihmimpi ✓). Platform lain: isi manual.</p>
+            </div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Fundraiser / Penyelenggara</label><input value={form.fundraiser} onChange={(e) => setForm({ ...form, fundraiser: e.target.value })} className={fld} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Dana Terhimpun (Rp)</label><input type="number" value={form.raised} onChange={(e) => setForm({ ...form, raised: e.target.value })} className={fld} /></div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Loader2, Palette, RefreshCw, Calendar, Film, FileText, CheckCircle2 } from 'lucide-react';
+import { Plus, Loader2, Palette, RefreshCw, Calendar, Film, FileText, CheckCircle2, Paperclip } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { DESIGN_STATUSES, DESIGN_CATEGORIES, DESIGN_PRIORITIES, findOpt } from '../lib/design';
 import { formatDate, isOverdue } from '../lib/workflow';
@@ -31,6 +31,7 @@ function RequestCard({ req, onClick, onDragStart }) {
       <div className="flex items-center gap-2 mt-2">
         {req.footage_link && <Film size={13} className="text-gray-400" title="Ada footage" />}
         {req.brief_link && <FileText size={13} className="text-gray-400" title="Ada brief" />}
+        {req.creatives?.length > 0 && <span className="inline-flex items-center gap-0.5 text-[11px] text-gray-500"><Paperclip size={12} />{req.creatives.length}</span>}
       </div>
       <div className="flex items-center justify-between mt-2">
         {req.deadline ? (

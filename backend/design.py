@@ -4,13 +4,16 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 
 import core
 import notifications as notif
+import storage
 
 router = APIRouter(prefix="/api")
+
+MAX_UPLOAD_MB = 100
 
 CATEGORIES = ["flyer_poster", "feed_ig", "story_ig", "video", "motion", "banner", "logo", "lainnya"]
 STATUSES = ["diajukan", "diproses", "revisi", "selesai"]
@@ -128,7 +131,7 @@ async def create_request(body: DesignRequestIn, user: dict = Depends(core.get_cu
     doc = body.model_dump()
     doc["results"] = [r if isinstance(r, dict) else r.model_dump() for r in doc.get("results", [])]
     doc.update({
-        "id": str(uuid.uuid4()), "number": await _next_number(),
+        "id": str(uuid.uuid4()), "number": await _next_number(), "creatives": [],
         "created_by": user["id"], "created_at": _now(), "updated_at": _now(),
     })
     await core.db.design_requests.insert_one(doc)
@@ -172,5 +175,65 @@ async def delete_request(req_id: str, user: dict = Depends(core.get_current_user
         raise HTTPException(status_code=404, detail="Pengajuan tidak ditemukan")
     if user.get("role") not in ("owner", "admin") and item.get("created_by") != user["id"]:
         raise HTTPException(status_code=403, detail="Hanya pembuat atau admin yang bisa menghapus")
+    # best-effort: clean up uploaded creatives from Cloudinary
+    for c in item.get("creatives", []) or []:
+        if c.get("public_id"):
+            try:
+                await storage.destroy(c["public_id"], c.get("resource_type", "image"))
+            except Exception:
+                pass
     await core.db.design_requests.delete_one({"id": req_id})
     return {"success": True}
+
+
+@router.get("/design-storage/status")
+async def storage_status(_: dict = Depends(core.get_current_user)):
+    """Whether file uploads (Cloudinary) are configured on the backend."""
+    return {"configured": storage.is_configured(), "max_mb": MAX_UPLOAD_MB}
+
+
+@router.post("/design-requests/{req_id}/creatives")
+async def upload_creative(req_id: str, file: UploadFile = File(...),
+                          user: dict = Depends(core.get_current_user)):
+    """Upload a creative file (image/video/pdf) and attach it to the request."""
+    if not storage.is_configured():
+        raise HTTPException(status_code=400, detail="Penyimpanan file belum dikonfigurasi (Cloudinary)")
+    item = await core.db.design_requests.find_one({"id": req_id})
+    if not item:
+        raise HTTPException(status_code=404, detail="Pengajuan tidak ditemukan")
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="File kosong")
+    if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File terlalu besar (maks {MAX_UPLOAD_MB}MB)")
+    try:
+        rec = await storage.upload(data, folder=f"mawanads/desain/{item.get('number', req_id)}")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Gagal upload: {e}")
+    rec.update({
+        "id": str(uuid.uuid4()), "filename": file.filename or "file",
+        "uploaded_by": user["id"], "uploaded_by_name": user.get("name", ""), "uploaded_at": _now(),
+    })
+    await core.db.design_requests.update_one(
+        {"id": req_id}, {"$push": {"creatives": rec}, "$set": {"updated_at": _now()}})
+    fresh = await core.db.design_requests.find_one({"id": req_id}, {"_id": 0})
+    return (await _enrich([fresh]))[0]
+
+
+@router.delete("/design-requests/{req_id}/creatives/{creative_id}")
+async def delete_creative(req_id: str, creative_id: str, user: dict = Depends(core.get_current_user)):
+    item = await core.db.design_requests.find_one({"id": req_id})
+    if not item:
+        raise HTTPException(status_code=404, detail="Pengajuan tidak ditemukan")
+    target = next((c for c in item.get("creatives", []) or [] if c.get("id") == creative_id), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    if target.get("public_id"):
+        try:
+            await storage.destroy(target["public_id"], target.get("resource_type", "image"))
+        except Exception:
+            pass
+    await core.db.design_requests.update_one(
+        {"id": req_id}, {"$pull": {"creatives": {"id": creative_id}}, "$set": {"updated_at": _now()}})
+    fresh = await core.db.design_requests.find_one({"id": req_id}, {"_id": 0})
+    return (await _enrich([fresh]))[0]

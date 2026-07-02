@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { X, Loader2, Trash2, Plus, Link2, Film, FileText, ExternalLink } from 'lucide-react';
+import { X, Loader2, Trash2, Plus, Link2, Film, FileText, ExternalLink, UploadCloud, Download, Paperclip } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { DESIGN_CATEGORIES, DESIGN_STATUSES, DESIGN_PRIORITIES } from '../lib/design';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+
+const fmtSize = (b) => {
+  if (!b) return '';
+  if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`;
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const blank = {
   title: '', category: 'flyer_poster', priority: 'sedang', requester: '', division: '',
@@ -20,11 +26,19 @@ export default function DesignRequestModal({ open, request, members, onClose, on
   const [saving, setSaving] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newUrl, setNewUrl] = useState('');
+  const [creatives, setCreatives] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [storageOk, setStorageOk] = useState(true);
+  const fileRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
     setForm(request ? { ...blank, ...request, results: request.results || [] } : blank);
+    setCreatives(request?.creatives || []);
     setNewLabel(''); setNewUrl('');
+    axios.get(`${API}/api/design-storage/status`, { headers })
+      .then((r) => setStorageOk(!!r.data?.configured)).catch(() => setStorageOk(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, request]);
 
   if (!open) return null;
@@ -58,6 +72,38 @@ export default function DesignRequestModal({ open, request, members, onClose, on
       toast.error(err?.response?.data?.detail || 'Gagal menyimpan');
     }
     setSaving(false);
+  };
+
+  const uploadFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = '';
+    if (!file || !request) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await axios.post(`${API}/api/design-requests/${request.id}/creatives`, fd, {
+        headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+      });
+      setCreatives(res.data.creatives || []);
+      onSaved(res.data);
+      toast.success('File berhasil diupload');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Gagal upload file');
+    }
+    setUploading(false);
+  };
+
+  const removeCreative = async (cid) => {
+    if (!window.confirm('Hapus file ini?')) return;
+    try {
+      const res = await axios.delete(`${API}/api/design-requests/${request.id}/creatives/${cid}`, { headers });
+      setCreatives(res.data.creatives || []);
+      onSaved(res.data);
+      toast.success('File dihapus');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Gagal menghapus file');
+    }
   };
 
   const remove = async () => {
@@ -174,6 +220,50 @@ export default function DesignRequestModal({ open, request, members, onClose, on
               <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://link-hasil..." className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-cyan-500" />
               <button type="button" onClick={addResult} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700"><Plus size={14} /> Link</button>
             </div>
+          </div>
+
+          {/* Creative files — upload/download */}
+          <div className="border-t pt-4">
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-cyan-700 mb-2"><Paperclip size={15} /> File Creative</label>
+            {!request ? (
+              <p className="text-xs text-gray-400">Simpan pengajuan dulu, lalu upload file creative-nya.</p>
+            ) : !storageOk ? (
+              <p className="text-xs text-amber-600">Penyimpanan file belum dikonfigurasi (Cloudinary). Sementara pakai Link hasil di atas.</p>
+            ) : (
+              <>
+                {creatives.length === 0 && <p className="text-xs text-gray-400 mb-2">Belum ada file. Upload hasil desain / footage (gambar, video, PDF).</p>}
+                <div className="space-y-1.5 mb-2">
+                  {creatives.map((c) => {
+                    const isImg = c.resource_type === 'image';
+                    return (
+                      <div key={c.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                        {isImg ? (
+                          <a href={c.url} target="_blank" rel="noreferrer" className="shrink-0">
+                            <img src={c.url} alt={c.filename} className="h-10 w-10 rounded object-cover border border-gray-200" />
+                          </a>
+                        ) : (
+                          <span className="h-10 w-10 rounded bg-gray-200 grid place-items-center text-gray-500 shrink-0">
+                            {c.resource_type === 'video' ? <Film size={16} /> : <FileText size={16} />}
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-800 truncate">{c.filename}</p>
+                          <p className="text-[11px] text-gray-400">{(c.format || c.resource_type || '').toUpperCase()} {c.bytes ? `• ${fmtSize(c.bytes)}` : ''}{c.uploaded_by_name ? ` • ${c.uploaded_by_name}` : ''}</p>
+                        </div>
+                        <a href={c.download_url || c.url} target="_blank" rel="noreferrer" download className="text-gray-400 hover:text-cyan-600 p-1" title="Download"><Download size={16} /></a>
+                        <button type="button" onClick={() => removeCreative(c.id)} className="text-gray-400 hover:text-red-500 p-1" title="Hapus"><Trash2 size={15} /></button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <input ref={fileRef} type="file" onChange={uploadFile} className="hidden"
+                  accept="image/*,video/*,application/pdf,.psd,.ai,.zip" />
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-cyan-300 text-cyan-700 hover:bg-cyan-50 text-sm font-medium disabled:opacity-60">
+                  {uploading ? <Loader2 size={15} className="animate-spin" /> : <UploadCloud size={16} />} {uploading ? 'Mengupload…' : 'Upload File'}
+                </button>
+              </>
+            )}
           </div>
 
           <div>

@@ -5,10 +5,13 @@ HTML) can be scraped with a plain HTTP fetch. Client-rendered or bot-protected
 sites need a headless browser or paid scraping API (not available here), so those
 return a clear reason and fall back to manual entry.
 
-Currently reliable: raihmimpi.id (__NEXT_DATA__), niatbaik.id (server-rendered
-HTML), sharinghappiness.org (__NEXT_DATA__). KawanBantu loads its numbers via a
-client-side XHR (nothing in the initial HTML), so it still falls back to manual
-entry until a headless-browser path is added.
+Coverage:
+- raihmimpi.id — __NEXT_DATA__ (httpx)
+- niatbaik.id — server-rendered HTML (httpx)
+- sharinghappiness.org — __NEXT_DATA__ (httpx)
+- kawanbantu — aggressively anti-automation: returns a 404 shell to every
+  non-warmed client (plain fetch AND headless/headful Chromium), so it can't be
+  auto-scraped server-side. Falls back to manual entry.
 """
 import re
 import json
@@ -182,7 +185,7 @@ async def scrape(url: str) -> dict:
             data = await _scrape_sharinghappiness(url)
         elif platform == "kawanbantu":
             return {"ok": False, "platform": platform,
-                    "error": "KawanBantu memuat angka donasi secara client-side (XHR, tidak ada di HTML awal) — belum bisa auto-scrape server-side. Isi manual dulu."}
+                    "error": "KawanBantu memblokir akses non-browser (404 untuk fetch & headless) — belum bisa auto-scrape. Isi manual dulu."}
         else:
             data = await _scrape_generic_next(url)
         return {"ok": True, "platform": platform, "data": data}

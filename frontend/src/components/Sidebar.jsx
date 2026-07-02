@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import {
   BarChart3, Users, Ticket, Shield, ClipboardList, UserCog, User,
-  Home, LogOut, X, LayoutGrid, Building2, Bell, Palette,
+  Home, LogOut, X, LayoutGrid, Building2, Bell, Palette, Receipt,
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -40,6 +40,7 @@ const NAV_SECTIONS = [
       { to: '/admin/webinar', label: 'Webinar', icon: Ticket, roles: ADMINS },
       { to: '/admin/whitelist', label: 'Whitelist CB', icon: Shield, roles: ADMINS, end: true },
       { to: '/admin/whitelist/spends', label: 'Input Spending', icon: ClipboardList, roles: ADMINS },
+      { to: '/admin/invoice', label: 'Invoice & Omzet', icon: Receipt, roles: ADMINS },
     ],
   },
   {

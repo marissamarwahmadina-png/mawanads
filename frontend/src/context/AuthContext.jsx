@@ -43,13 +43,17 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data);
         localStorage.setItem(USER_KEY, JSON.stringify(res.data));
       })
-      .catch(() => {
+      .catch((err) => {
         if (!active) return;
-        // Token invalid/expired — sign out.
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        setToken(null);
-        setUser(null);
+        // Only sign out on a definitive 401 (invalid/expired token).
+        // Transient errors (network, 5xx, timeout — e.g. backend cold start/restart)
+        // must NOT log the user out; keep the stored session.
+        if (err?.response?.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          setToken(null);
+          setUser(null);
+        }
       })
       .finally(() => active && setLoading(false));
     return () => {

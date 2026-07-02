@@ -5,7 +5,10 @@ HTML) can be scraped with a plain HTTP fetch. Client-rendered or bot-protected
 sites need a headless browser or paid scraping API (not available here), so those
 return a clear reason and fall back to manual entry.
 
-Currently reliable: raihmimpi.id (data in __NEXT_DATA__).
+Currently reliable: raihmimpi.id (__NEXT_DATA__), niatbaik.id (server-rendered
+HTML), sharinghappiness.org (__NEXT_DATA__). KawanBantu loads its numbers via a
+client-side XHR (nothing in the initial HTML), so it still falls back to manual
+entry until a headless-browser path is added.
 """
 import re
 import json
@@ -62,6 +65,14 @@ def _num(v) -> float:
         return 0
 
 
+def _rp(v) -> int:
+    """Parse an Indonesian-formatted amount (e.g. 'Rp 30.000.000') to an int.
+
+    Dots are thousand separators here, so strip everything non-digit.
+    """
+    return int(re.sub(r"[^\d]", "", str(v)) or 0)
+
+
 async def _scrape_raihmimpi(url: str) -> dict:
     nd = _next_data(await _fetch(url))
     if not nd:
@@ -76,6 +87,45 @@ async def _scrape_raihmimpi(url: str) -> dict:
         "donor_count": int(_num(camp.get("TOTAL_DONATUR"))),
         "fundraiser_count": 0,
         "fundraiser": camp.get("NAMA_LENGKAP", "") or "",
+    }
+
+
+async def _scrape_niatbaik(url: str) -> dict:
+    """niatbaik.id server-renders campaign figures straight into the HTML."""
+    html = await _fetch(url)
+    if "Bot Verification" in html or "d_total" not in html:
+        raise ValueError("Halaman diproteksi anti-bot / bukan halaman campaign")
+    raised = re.search(r'class="d_total"[^>]*>\s*Rp\s*([\d.]+)', html)
+    target = re.search(r'd_target_text"[^>]*>.*?Rp\s*([\d.]+)', html, re.S)
+    donor = re.search(r'Donatur\s*\(\s*(\d+)\s*\)', html, re.I)
+    title = re.search(r'<title>\s*(?:Campaign\s*-\s*)?(.*?)\s*(?:\||</title)', html, re.I | re.S)
+    if not raised and not target:
+        raise ValueError("Angka donasi tidak ditemukan (struktur halaman berubah)")
+    return {
+        "name": (title.group(1).strip() if title else ""),
+        "raised": _rp(raised.group(1)) if raised else 0,
+        "target": _rp(target.group(1)) if target else 0,
+        "donor_count": int(donor.group(1)) if donor else 0,
+        "fundraiser_count": 0,
+        "fundraiser": "",
+    }
+
+
+async def _scrape_sharinghappiness(url: str) -> dict:
+    """sharinghappiness.org exposes the campaign in __NEXT_DATA__ pageProps.data.result."""
+    nd = _next_data(await _fetch(url))
+    if not nd:
+        raise ValueError("Struktur halaman berubah (tidak ada __NEXT_DATA__)")
+    result = (((nd.get("props", {}) or {}).get("pageProps", {}) or {}).get("data", {}) or {}).get("result")
+    if not isinstance(result, dict):
+        raise ValueError("Data campaign tidak ditemukan — pastikan ini link halaman campaign")
+    return {
+        "name": result.get("title", "") or "",
+        "raised": _rp(result.get("collected")),
+        "target": _rp(result.get("target")),
+        "donor_count": int(_num(result.get("transaction_count"))),
+        "fundraiser_count": 0,
+        "fundraiser": "",
     }
 
 
@@ -127,11 +177,12 @@ async def scrape(url: str) -> dict:
         if platform == "raihmimpi":
             data = await _scrape_raihmimpi(url)
         elif platform == "niatbaik":
-            return {"ok": False, "platform": platform,
-                    "error": "niatbaik.id memakai proteksi anti-bot (Bot Verification) — belum bisa auto-scrape. Isi manual dulu."}
+            data = await _scrape_niatbaik(url)
+        elif platform == "sharinghappiness":
+            data = await _scrape_sharinghappiness(url)
         elif platform == "kawanbantu":
             return {"ok": False, "platform": platform,
-                    "error": "KawanBantu memuat angka donasi secara client-side (tidak ada di HTML) — belum bisa auto-scrape server-side. Isi manual dulu."}
+                    "error": "KawanBantu memuat angka donasi secara client-side (XHR, tidak ada di HTML awal) — belum bisa auto-scrape server-side. Isi manual dulu."}
         else:
             data = await _scrape_generic_next(url)
         return {"ok": True, "platform": platform, "data": data}
